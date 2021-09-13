@@ -9,19 +9,36 @@
 #define SRC_BB808_SAMPLE_MNGR_H_
 
 
-#define	MAX_NUM_SAMPLES				16
-#define SAMPLE_OUT_BUFFER_SIZE		2048
+#define	MAX_NUM_SAMPLES				8
+//#define SAMPLE_OUT_BUFFER_SIZE		2048
+#define SAMPLE_OUT_BUFFER_SIZE		8192
 #define SAMPLE_OUT_HALFBUFFER_SIZE 	(SAMPLE_OUT_BUFFER_SIZE/2)
 #define	SAMPLE_NAME_MAX_LEN			32
+
+
+typedef struct {
+	uint8_t		wav_name[SAMPLE_NAME_MAX_LEN];	// max file len is SAMPLE_NAME_MAX_LEN
+	uint8_t		midi_key;
+}Sample_WavFilesTypeDef;
+
 typedef struct {
 	uint32_t	fptr[MAX_NUM_SAMPLES];
-	uint32_t	sample_name[MAX_NUM_SAMPLES][SAMPLE_NAME_MAX_LEN];	// max file len is SAMPLE_NAME_MAX_LEN
+	uint32_t	sample_flag[MAX_NUM_SAMPLES];
+	uint8_t		sample_name[MAX_NUM_SAMPLES][SAMPLE_NAME_MAX_LEN];	// max file len is SAMPLE_NAME_MAX_LEN
+	uint32_t 	sample_rate[MAX_NUM_SAMPLES];
+	uint8_t		midi_key[MAX_NUM_SAMPLES];
 	uint8_t		flag;
 }Sample_DescriptorTypeDef;
 
 /* flag defines */
 #define	WAVSAMPLE_STATE_FLAG_HALF		1
 #define	WAVSAMPLE_STATE_FLAG_FULL		2
+
+/* sample_flag defines */
+#define	SAMPLE_STATE_INACTIVE			0
+#define	SAMPLE_STATE_ACTIVE				1
+#define	SAMPLE_ACTIVE_BIT				1
+
 
 typedef struct {
   uint32_t ChunkID;       /* 0 */

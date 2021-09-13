@@ -9,26 +9,63 @@
 #include "fatfs.h"
 
 #ifdef SAMPLEPLAYER
-Sample_DescriptorTypeDef	Sample_Descriptor;
+Sample_DescriptorTypeDef		Sample_Descriptor;
 __attribute__ ((aligned (16)))  uint16_t file_buf[MAX_NUM_SAMPLES][SAMPLE_OUT_BUFFER_SIZE];
 __attribute__ ((aligned (16)))  uint16_t out_buf[SAMPLE_OUT_BUFFER_SIZE];
-SampleWAV_FormatTypeDef SampleWAV_Format;
-FIL WavFile[MAX_NUM_SAMPLES];
-static uint32_t SampleVolume = 70;
+SampleWAV_FormatTypeDef 		SampleWAV_Format;
+FIL 							WavFile[MAX_NUM_SAMPLES];
+static uint32_t 				SampleVolume = 70;
 
-static uint32_t SampleGetFileInfo(uint8_t * filename, SampleWAV_FormatTypeDef *info)
+Sample_WavFilesTypeDef	Sample_WavFiles[MAX_NUM_SAMPLES] =
+{
+		{
+				"sample.wav",
+				0x25,
+		},
+		{
+				"sample.wav",
+				0x26,
+		},
+		{
+				"sample.wav",
+				0x27,
+		},
+		{
+				"sample.wav",
+				0x28,
+		},
+		{
+				"sample.wav",
+				0x29,
+		},
+		{
+				"sample.wav",
+				0x2a,
+		},
+		{
+				"sample.wav",
+				0x2b,
+		},
+		{
+				"sample.wav",
+				0x2c,
+		},
+};
+
+static uint32_t SampleGetFileInfo(uint8_t * filename, SampleWAV_FormatTypeDef *info , uint8_t index)
 {
 uint32_t bytesread;
+#ifdef	PRINT_FILE_INFO
 uint32_t duration;
 uint8_t str[64];
-uint32_t	i = 0;
+#endif
 
 
-	if(f_open(&WavFile[i], (char *)filename, FA_OPEN_EXISTING | FA_READ) == FR_OK)
+	if(f_open(&WavFile[index], (char *)filename, FA_OPEN_EXISTING | FA_READ) == FR_OK)
 	{
-		/* Fill the buffer to Send */
-		if(f_read(&WavFile[i], info, sizeof(SampleWAV_Format), (void *)&bytesread) == FR_OK)
+		if(f_read(&WavFile[index], info, sizeof(SampleWAV_Format), (void *)&bytesread) == FR_OK)
 		{
+#ifdef	PRINT_FILE_INFO
 			BSP_LCD_SetTextColor(LCD_COLOR_CYAN);
 			sprintf((char *)str,  "Sample rate : %d Hz", (int)(info->SampleRate));
 			BSP_LCD_ClearStringLine(6);
@@ -48,9 +85,10 @@ uint32_t	i = 0;
 			sprintf((char *)str,  "Volume : %lu", SampleVolume);
 			BSP_LCD_ClearStringLine(9);
 			BSP_LCD_DisplayStringAtLine(9, str);
+#endif
 			return 0;
 		}
-		f_close(&WavFile[i]);
+		f_close(&WavFile[index]);
 	}
 	return 1;
 }
@@ -64,55 +102,99 @@ uint32_t SamplePlayerInit(uint32_t AudioFreq)
 	return 0;
 }
 
+
 uint32_t SamplePlayerStart(uint8_t * filename)
 {
-uint32_t bytesread;
-uint32_t	i = 0;
+uint32_t	i;
+SampleWAV_FormatTypeDef info;
 
-	SampleGetFileInfo(filename,&SampleWAV_Format);
-	SamplePlayerInit(SampleWAV_Format.SampleRate);
-
-	f_lseek(&WavFile[i], 0);
-
-	/* Fill whole buffer at first time */
-	if(f_read(&WavFile[i],(uint8_t *)file_buf[i],SAMPLE_OUT_BUFFER_SIZE*2,(void *)&bytesread) == FR_OK)
+	for(i=0;i<MAX_NUM_SAMPLES;i++)
 	{
-		BSP_LCD_DisplayStringAt(18, LINE(10), (uint8_t *)"  [PLAY ]", LEFT_MODE);
-		if(bytesread != 0)
+		if ( Sample_WavFiles[i].midi_key == 0 )
+			i = MAX_NUM_SAMPLES;
+		else
 		{
-			BSP_AUDIO_OUT_Play(out_buf, SAMPLE_OUT_BUFFER_SIZE);
-			Sample_Descriptor.fptr[i] = bytesread;
-			return 0;
+			if ( SampleGetFileInfo(filename,&info,i) == 0 )
+			{
+				Sample_Descriptor.sample_rate[i] = info.SampleRate;
+				Sample_Descriptor.midi_key[i] = Sample_WavFiles[i].midi_key;
+			}
 		}
 	}
-	return 1;
+	SamplePlayerInit(SampleWAV_Format.SampleRate);
+
+	for(i=0;i<SAMPLE_OUT_HALFBUFFER_SIZE;i++)
+		out_buf[i] = 0;
+	BSP_AUDIO_OUT_Play(out_buf, SAMPLE_OUT_BUFFER_SIZE);
+	Sample_Descriptor.sample_flag[0] = SAMPLE_ACTIVE_BIT;
+	Sample_Descriptor.sample_flag[1] = SAMPLE_ACTIVE_BIT;
+	Sample_Descriptor.sample_flag[2] = SAMPLE_ACTIVE_BIT;
+	Sample_Descriptor.sample_flag[3] = SAMPLE_ACTIVE_BIT;
+	Sample_Descriptor.sample_flag[4] = SAMPLE_ACTIVE_BIT;
+	Sample_Descriptor.sample_flag[5] = SAMPLE_ACTIVE_BIT;
+	Sample_Descriptor.sample_flag[6] = SAMPLE_ACTIVE_BIT;
+	Sample_Descriptor.sample_flag[7] = SAMPLE_ACTIVE_BIT;
+	return 0;
 }
 
+static void store_to_outbuf(uint16_t buf_index ,uint16_t limitlow , uint16_t limithigh )
+{
+uint32_t	i;
+uint16_t	sample;
+	for(i=limitlow;i<limithigh;i++)
+	{
+		if ( buf_index == 0 )
+		{
+			out_buf[i] = file_buf[0][i];
+		}
+		else
+		{
+			sample = (out_buf[i] >> 1 ) + (file_buf[buf_index][i] >> 1);
+			out_buf[i] = sample;
+		}
+	}
+}
+
+uint32_t	delay = 0;
 static void SamplePlayerProcess(void)
 {
 uint32_t 	bytesread;
-uint32_t	i = 0 , k;
+uint32_t	i = 0;
 
 	HAL_GPIO_WritePin(ARD_D8_GPIO_GPIO_Port, ARD_D8_GPIO_Pin, GPIO_PIN_SET);
 	if (( Sample_Descriptor.flag &  WAVSAMPLE_STATE_FLAG_HALF ) == WAVSAMPLE_STATE_FLAG_HALF)
 	{
-		if(f_read(&WavFile[i],	(uint8_t *)&file_buf[i][0],	SAMPLE_OUT_BUFFER_SIZE,	(void *)&bytesread) == FR_OK)
+		for(i=0;i<MAX_NUM_SAMPLES;i++)
 		{
-			for(k=0;k<SAMPLE_OUT_HALFBUFFER_SIZE;k++)
-				out_buf[k] = file_buf[i][k];
+			if (( Sample_Descriptor.sample_flag[i] &  SAMPLE_ACTIVE_BIT ) == SAMPLE_STATE_ACTIVE)
+			{
+				if(f_read(&WavFile[i],	(uint8_t *)&file_buf[i][0],	SAMPLE_OUT_BUFFER_SIZE,	(void *)&bytesread) == FR_OK)
+				{
+					store_to_outbuf(i,0,SAMPLE_OUT_HALFBUFFER_SIZE);
+					Sample_Descriptor.fptr[i] += bytesread;
+				}
+				else
+					Sample_Descriptor.sample_flag[i] &= ~SAMPLE_ACTIVE_BIT;
+			}
 		}
 		Sample_Descriptor.flag &= ~WAVSAMPLE_STATE_FLAG_HALF;
-		Sample_Descriptor.fptr[i] += bytesread;
 	}
 	if (( Sample_Descriptor.flag &  WAVSAMPLE_STATE_FLAG_FULL ) == WAVSAMPLE_STATE_FLAG_FULL)
 	{
-		if(f_read(&WavFile[i],	(uint8_t *)&file_buf[i][SAMPLE_OUT_HALFBUFFER_SIZE],SAMPLE_OUT_BUFFER_SIZE,(void *)&bytesread) == FR_OK)
+		for(i=0;i<MAX_NUM_SAMPLES;i++)
 		{
-			for(k=SAMPLE_OUT_HALFBUFFER_SIZE;k<SAMPLE_OUT_BUFFER_SIZE;k++)
-				out_buf[k] = file_buf[i][k];
+			if (( Sample_Descriptor.sample_flag[i] &  SAMPLE_ACTIVE_BIT ) == SAMPLE_STATE_ACTIVE)
+			{
+				if(f_read(&WavFile[i],	(uint8_t *)&file_buf[i][SAMPLE_OUT_HALFBUFFER_SIZE],SAMPLE_OUT_BUFFER_SIZE,(void *)&bytesread) == FR_OK)
+				{
+					store_to_outbuf(i,SAMPLE_OUT_HALFBUFFER_SIZE,SAMPLE_OUT_BUFFER_SIZE);
+					Sample_Descriptor.fptr[i] += bytesread;
+				}
+				else
+					Sample_Descriptor.sample_flag[i] &= ~SAMPLE_ACTIVE_BIT;
+			}
 		}
 		Sample_Descriptor.flag &= ~WAVSAMPLE_STATE_FLAG_FULL;
-		Sample_Descriptor.fptr[i] += bytesread;
 	}
 	HAL_GPIO_WritePin(ARD_D8_GPIO_GPIO_Port, ARD_D8_GPIO_Pin, GPIO_PIN_RESET);
 }

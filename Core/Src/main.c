@@ -175,7 +175,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(USB_OTGHS_PPWR_EN_GPIO_Port, USB_OTGHS_PPWR_EN_Pin, GPIO_PIN_SET);
   //HAL_GPIO_WritePin(USB_OTGFS_PPWR_EN_GPIO_Port, USB_OTGFS_PPWR_EN_Pin, GPIO_PIN_RESET);
-  InitLCD("bB808 Drum Machine");
+  InitLCD("bB808");
   HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
