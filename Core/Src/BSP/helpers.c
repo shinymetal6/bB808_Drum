@@ -22,14 +22,14 @@ USBH_HandleTypeDef hUSBHost; /* USB Host handle */
 
 extern	uint32_t	usbdisk_ready;
 
-void InitLCD(uint8_t *title)
+void InitLCD(char *title)
 {
 	  BSP_LCD_Init();
 	  BSP_LCD_Clear(LCD_COLOR_BLACK);
 	  BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
 	  BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
 	  BSP_LCD_SetFont(&Font24);
-	  BSP_LCD_DisplayStringAt(0, 1, title, CENTER_MODE);
+	  BSP_LCD_DisplayStringAt(0, 1, (uint8_t *)title, CENTER_MODE);
 	  BSP_LCD_SetFont(&Font12);
 }
 
@@ -44,15 +44,17 @@ uint8_t	midi_buf[64],msg[64],midi_buffer[64];
 
 void MSC_Application(uint8_t from)
 {
+#ifdef VERBOSE_USB_HELPERS
 FRESULT res;                                          /* FatFs function common result code */
 uint32_t  bytesread;                     /* File write/read counts */
 uint8_t rtext[100];                                   /* File read buffer */
-
+#endif
 	if(f_mount(&USBDISKFatFs, (TCHAR const*)USBDISKPath, 0) != FR_OK)
 	{
 		USB_Error_Handler("Error mounting disk");
 		return;
 	}
+#ifdef VERBOSE_USB_HELPERS
 	/*
 	if(f_open(&MyFile, "Even.TXT", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 	{
@@ -82,12 +84,14 @@ uint8_t rtext[100];                                   /* File read buffer */
 	f_close(&MyFile);
 	BSP_LCD_DisplayStringAt(0, 70, (uint8_t *)"USB OK", CENTER_MODE);
 	BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
+#endif
 	usbdisk_ready = 1;
 
 	/* Unlink the USB disk I/O driver */
 	//FATFS_UnLinkDriver(USBDISKPath);
 }
 
+extern	void MIDI_Application(uint8_t from,USBH_HandleTypeDef *phost, uint8_t id);
 
 __weak void USB_CallFromFS(USBH_HandleTypeDef *phost, uint8_t id)
 {

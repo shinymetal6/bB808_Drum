@@ -8,7 +8,8 @@ static AUDIO_OUT_BufferTypeDef  BufferCtl;
 static uint32_t uwVolume = 70;
 WAVE_FormatTypeDef WaveFormat;
 FIL WavFile;
-__attribute__ ((aligned (16)))  uint16_t file_buf[AUDIO_OUT_BUFFER_SIZE];
+__attribute__ ((aligned (16)))  uint16_t file_buf[NUM_INSTRUMENT][AUDIO_OUT_BUFFER_SIZE];
+__attribute__ ((aligned (16)))  uint16_t out_buf[AUDIO_OUT_BUFFER_SIZE];
 
 
 static AUDIO_ErrorTypeDef GetFileInfo(uint8_t * filename, WAVE_FormatTypeDef *info)
@@ -48,135 +49,128 @@ uint8_t str[FILEMGR_FILE_NAME_SIZE + 20];
 	return AUDIO_ERROR_IO;
 }
 
-uint8_t PlayerInit(uint32_t AudioFreq)
-{
-	/* Initialize the Audio codec and all related peripherals (I2S, I2C, IOExpander, IOs...) */
-	if(BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_BOTH, uwVolume, AudioFreq) != 0)
-		return 1;
-	BSP_AUDIO_OUT_SetAudioFrameSlot(CODEC_AUDIOFRAME_SLOT_02);
-	return 0;
-}
 
-AUDIO_ErrorTypeDef AUDIO_PLAYER_Start(uint8_t * filename)
+void AUDIO_PLAYER_Start(uint8_t * filename)
 {
-uint32_t bytesread;
+uint8_t		instrument_number = 0;
 
+	BSP_QSPI_Init();
 	GetFileInfo(filename,&WaveFormat);
-	PlayerInit(WaveFormat.SampleRate);
-
-	f_lseek(&WavFile, 0);
-
-	/* Fill whole buffer at first time */
-	if(f_read(&WavFile,(uint8_t *)file_buf,AUDIO_OUT_BUFFER_SIZE*2,(void *)&bytesread) == FR_OK)
-	{
-		BSP_LCD_DisplayStringAt(18, LINE(10), (uint8_t *)"  [PLAY ]", LEFT_MODE);
-		if(bytesread != 0)
-		{
-			BSP_AUDIO_OUT_Play(file_buf, AUDIO_OUT_BUFFER_SIZE);
-			BufferCtl.fptr = bytesread;
-			return AUDIO_ERROR_NONE;
-		}
-	}
-	return AUDIO_ERROR_IO;
+	if(BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_BOTH, uwVolume, WaveFormat.SampleRate) != 0)
+		return;
+	BSP_AUDIO_OUT_SetAudioFrameSlot(CODEC_AUDIOFRAME_SLOT_02);
+	BufferCtl.fptr[instrument_number] = 0;
+	BufferCtl.sample_len[instrument_number] = WaveFormat.FileSize;
+	BSP_AUDIO_OUT_Play(out_buf, AUDIO_OUT_BUFFER_SIZE);
+	return;
 }
 
-AUDIO_ErrorTypeDef AUDIO_PLAYER_Process(void)
+//#define	FROM_QSPI	1
+uint32_t get_data(FIL *WavFile , uint8_t *data, uint32_t size , uint32_t *data_received, uint32_t fptr)
 {
-AUDIO_ErrorTypeDef audio_error = AUDIO_ERROR_NONE;
+#ifdef FROM_QSPI
+#define	FILE_POINTER	(1024*1024*6)
+	BSP_QSPI_Read((uint8_t *)data, FILE_POINTER + fptr, size);
+	*data_received = size;
+#else
 uint32_t bytesread;
+	f_read(WavFile,	(uint8_t *)data ,	size,	(void *)&bytesread);
+	*data_received = bytesread;
+#endif
+	return 0;
+
+}
+
+void Sample_Process(void)
+{
+uint32_t bytesread,i;
+uint8_t		instrument_number = 0;
 
 	HAL_GPIO_WritePin(ARD_D8_GPIO_GPIO_Port, ARD_D8_GPIO_Pin, GPIO_PIN_SET);
-
-	if(BufferCtl.fptr >= WaveFormat.FileSize)
+#ifdef FROM_QSPI
+	__disable_irq();
+#endif
+	//if(BufferCtl.fptr[instrument_number] >= WaveFormat.FileSize)
+	if(BufferCtl.fptr[instrument_number] >= BufferCtl.sample_len[instrument_number])
 	{
+		BufferCtl.fptr[instrument_number] = 0;
 		BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
-		return audio_error;
+		HAL_GPIO_WritePin(ARD_D8_GPIO_GPIO_Port, ARD_D8_GPIO_Pin, GPIO_PIN_RESET);
+		return;
 	}
+
 	if (( BufferCtl.flag &  WAVPLAY_STATE_FLAG_HALF ) == WAVPLAY_STATE_FLAG_HALF)
 	{
-		if(f_read(&WavFile,	(uint8_t *)file_buf,	AUDIO_OUT_BUFFER_SIZE,	(void *)&bytesread) != FR_OK)
-		{
-			BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
-			return AUDIO_ERROR_IO;
-		}
+		//if(f_read(&WavFile,	(uint8_t *)file_buf[instrument_number] ,	AUDIO_OUT_BUFFER_SIZE,	(void *)&bytesread) != FR_OK)
+		get_data(&WavFile,	(uint8_t *)file_buf[instrument_number] ,	AUDIO_OUT_BUFFER_SIZE,	(void *)&bytesread , BufferCtl.fptr[instrument_number]);
 		BufferCtl.flag &= ~WAVPLAY_STATE_FLAG_HALF;
-		BufferCtl.fptr += bytesread;
+		BufferCtl.fptr[instrument_number] += bytesread;
+		for(i=0;i<AUDIO_OUT_HALFBUFFER_SIZE;i++)
+			out_buf[i] = file_buf[instrument_number][i];
 	}
 
 	if (( BufferCtl.flag &  WAVPLAY_STATE_FLAG_FULL ) == WAVPLAY_STATE_FLAG_FULL)
 	{
-		if(f_read(&WavFile,	(uint8_t *)&file_buf[AUDIO_OUT_HALFBUFFER_SIZE],AUDIO_OUT_BUFFER_SIZE,(void *)&bytesread) != FR_OK)
-		{
-			BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
-			return AUDIO_ERROR_IO;
-		}
+		//if(f_read(&WavFile,	(uint8_t *)&file_buf[instrument_number] [0],AUDIO_OUT_BUFFER_SIZE,(void *)&bytesread) != FR_OK)
+		get_data(&WavFile,	(uint8_t *)file_buf[instrument_number],AUDIO_OUT_BUFFER_SIZE,(void *)&bytesread, BufferCtl.fptr[instrument_number]);
 		BufferCtl.flag &= ~WAVPLAY_STATE_FLAG_FULL;
-		BufferCtl.fptr += bytesread;
+		BufferCtl.fptr[instrument_number] += bytesread;
+		for(i=AUDIO_OUT_HALFBUFFER_SIZE;i<AUDIO_OUT_BUFFER_SIZE;i++)
+			out_buf[i] = file_buf[instrument_number] [i-AUDIO_OUT_HALFBUFFER_SIZE];
 	}
+	__enable_irq();
 	HAL_GPIO_WritePin(ARD_D8_GPIO_GPIO_Port, ARD_D8_GPIO_Pin, GPIO_PIN_RESET);
-	return audio_error;
+
+	return ;
 }
 
-AUDIO_ErrorTypeDef AUDIO_PLAYER_Stop(void)
-{
-	BSP_AUDIO_OUT_Stop(CODEC_PDWN_SW);
-	f_close(&WavFile);
-	return AUDIO_ERROR_NONE;
-}
 
 void BSP_AUDIO_OUT_TransferComplete_CallBack(void)
 {
 	/* allows AUDIO_Process() to refill 2nd part of the buffer  */
 	BufferCtl.flag |= WAVPLAY_STATE_FLAG_FULL;
-	AUDIO_PLAYER_Process();
+	Sample_Process();
 }
 
 void BSP_AUDIO_OUT_HalfTransfer_CallBack(void)
 {
 	/* allows AUDIO_Process() to refill 1st part of the buffer  */
 	BufferCtl.flag |= WAVPLAY_STATE_FLAG_HALF;
-	AUDIO_PLAYER_Process();
+	Sample_Process();
 }
 
 void BSP_AUDIO_OUT_ClockConfig(SAI_HandleTypeDef *hsai, uint32_t AudioFreq, void *Params)
 {
-  RCC_PeriphCLKInitTypeDef rcc_ex_clk_init_struct;
+RCC_PeriphCLKInitTypeDef rcc_ex_clk_init_struct;
 
-  HAL_RCCEx_GetPeriphCLKConfig(&rcc_ex_clk_init_struct);
+	HAL_RCCEx_GetPeriphCLKConfig(&rcc_ex_clk_init_struct);
+	switch (AudioFreq )
+	{
+	case	AUDIO_FREQUENCY_22K	:
+		rcc_ex_clk_init_struct.PLLI2S.PLLI2SN = 316;
+		rcc_ex_clk_init_struct.PLLI2S.PLLI2SQ = 14;
+		rcc_ex_clk_init_struct.PLLI2SDivQ = 8;
+		break;
+	case	AUDIO_FREQUENCY_44K	:
+		rcc_ex_clk_init_struct.PLLI2S.PLLI2SN = 316;
+		rcc_ex_clk_init_struct.PLLI2S.PLLI2SQ = 14;
+		rcc_ex_clk_init_struct.PLLI2SDivQ = 4;
+		break;
+	case	AUDIO_FREQUENCY_48K	:
+		rcc_ex_clk_init_struct.PLLI2S.PLLI2SN = 344;
+		rcc_ex_clk_init_struct.PLLI2S.PLLI2SQ = 14;
+		rcc_ex_clk_init_struct.PLLI2SDivQ = 4;
+		break;
+	default	:
+		rcc_ex_clk_init_struct.PLLI2S.PLLI2SN = 344;
+		rcc_ex_clk_init_struct.PLLI2S.PLLI2SQ = 14;
+		rcc_ex_clk_init_struct.PLLI2SDivQ = 4;
+		break;
+	}
 
-  /* Set the PLL configuration according to the audio frequency */
-  if((AudioFreq == AUDIO_FREQUENCY_11K) || (AudioFreq == AUDIO_FREQUENCY_22K) || (AudioFreq == AUDIO_FREQUENCY_44K))
-  {
-    /* Configure PLLSAI prescalers */
-    /* PLLSAI_VCO: VCO_429M
-    SAI_CLK(first level) = PLLSAI_VCO/PLLSAIQ = 429/2 = 214.5 Mhz
-    SAI_CLK_x = SAI_CLK(first level)/PLLSAIDIVQ = 214.5/19 = 11.289 Mhz */
-    rcc_ex_clk_init_struct.PeriphClockSelection = RCC_PERIPHCLK_SAI2;
-    rcc_ex_clk_init_struct.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLI2S;
-    rcc_ex_clk_init_struct.PLLI2S.PLLI2SN = 429;
-    //rcc_ex_clk_init_struct.PLLI2S.PLLI2SQ = 2;
-    rcc_ex_clk_init_struct.PLLI2S.PLLI2SQ = 1;
-    rcc_ex_clk_init_struct.PLLI2SDivQ = 19;
-
-    HAL_RCCEx_PeriphCLKConfig(&rcc_ex_clk_init_struct);
-
-  }
-  else /* AUDIO_FREQUENCY_8K, AUDIO_FREQUENCY_16K, AUDIO_FREQUENCY_48K, AUDIO_FREQUENCY_96K */
-  {
-    /* SAI clock config
-    PLLSAI_VCO: VCO_344M
-    SAI_CLK(first level) = PLLSAI_VCO/PLLSAIQ = 344/7 = 49.142 Mhz
-    SAI_CLK_x = SAI_CLK(first level)/PLLSAIDIVQ = 49.142/1 = 49.142 Mhz */
-    rcc_ex_clk_init_struct.PeriphClockSelection = RCC_PERIPHCLK_SAI2;
-    rcc_ex_clk_init_struct.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLI2S;
-    rcc_ex_clk_init_struct.PLLI2S.PLLI2SN = 344;
-    //rcc_ex_clk_init_struct.PLLI2S.PLLI2SQ = 7;
-    rcc_ex_clk_init_struct.PLLI2S.PLLI2SQ = 14;
-    //rcc_ex_clk_init_struct.PLLI2SDivQ = 1;
-    rcc_ex_clk_init_struct.PLLI2SDivQ = 4;
-
-    HAL_RCCEx_PeriphCLKConfig(&rcc_ex_clk_init_struct);
-  }
+	rcc_ex_clk_init_struct.PeriphClockSelection = RCC_PERIPHCLK_SAI2;
+	rcc_ex_clk_init_struct.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLI2S;
+	HAL_RCCEx_PeriphCLKConfig(&rcc_ex_clk_init_struct);
 }
 
 #endif

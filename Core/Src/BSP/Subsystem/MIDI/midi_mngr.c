@@ -14,23 +14,16 @@ uint8_t	midi_buffer[64],midi_rxbuffer[64];
 
 void MIDI_Application(uint8_t from,USBH_HandleTypeDef *phost, uint8_t id)
 {
-uint8_t	lcd_string[64];
-	if ( from == 0 )
-		sprintf((char *)lcd_string, "%s %s from FS", (char *)phost->pClass[0]->Name,(char *)phost->device.Data);
-	else
-		sprintf((char *)lcd_string, "%s %s from HS", (char *)phost->pClass[0]->Name,(char *)phost->device.Data);
-	BSP_LCD_DisplayStringAt(0, 55, (uint8_t *)lcd_string, CENTER_MODE);
 	USBH_MIDI_Receive(phost, midi_rxbuffer, 64);
 }
 
 void USB_CallFromFS(USBH_HandleTypeDef *phost, uint8_t id)
 {
-uint8_t	lcd_string[64];
 	if ( strncmp((char *)phost->pClass[0]->Name,"MIDI",4) == 0 )
 		MIDI_Application(0,phost,id);
 }
 
-void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
+__weak void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
 {
 uint8_t	i,k=0,j;
 uint8_t	lcd_string[64];

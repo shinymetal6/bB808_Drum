@@ -1,5 +1,5 @@
 /*
- * sample_mngr.c
+ * usb_sample_mngr.c
  *
  *  Created on: Sep 13, 2021
  *      Author: fil
@@ -8,7 +8,7 @@
 #include "main.h"
 #include "fatfs.h"
 
-#ifdef SAMPLEPLAYER
+#ifdef USBSAMPLEPLAYER
 Sample_DescriptorTypeDef		Sample_Descriptor;
 __attribute__ ((aligned (16)))  uint16_t file_buf[MAX_NUM_SAMPLES][SAMPLE_OUT_BUFFER_SIZE];
 __attribute__ ((aligned (16)))  uint16_t out_buf[SAMPLE_OUT_BUFFER_SIZE];

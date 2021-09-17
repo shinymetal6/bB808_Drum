@@ -8,7 +8,9 @@
 #ifndef SRC_BSP_SUBSYSTEM_AUDIO_WAVPLAYER_H_
 #define SRC_BSP_SUBSYSTEM_AUDIO_WAVPLAYER_H_
 
-#define AUDIO_OUT_BUFFER_SIZE                      2048
+#ifdef WAVPLAYER
+
+#define AUDIO_OUT_BUFFER_SIZE                      4096
 #define AUDIO_OUT_HALFBUFFER_SIZE                  (AUDIO_OUT_BUFFER_SIZE/2)
 #define AUDIO_IN_PCM_BUFFER_SIZE                   4*2304 /* buffer size in half-word */
 
@@ -70,10 +72,17 @@ typedef enum {
   AUDIO_PLAYBACK_CONTROL,
 }AUDIO_DEMO_SelectMode;
 
+#define	SAMPLE_NAME_MAX_LEN	16
+#define	NUM_INSTRUMENT		8
 /* Audio buffer control struct */
 typedef struct {
-  uint32_t fptr;
-  uint8_t	flag;
+	uint32_t		fptr[NUM_INSTRUMENT];
+	uint32_t		sample_len[NUM_INSTRUMENT];
+	uint32_t		sample_flag[NUM_INSTRUMENT];
+	uint8_t			sample_name[NUM_INSTRUMENT][SAMPLE_NAME_MAX_LEN];	// max file len is SAMPLE_NAME_MAX_LEN
+	uint32_t 		sample_rate[NUM_INSTRUMENT];
+	uint8_t			midi_key[NUM_INSTRUMENT];
+	uint8_t			flag;
 }AUDIO_OUT_BufferTypeDef;
 /*
 typedef enum
@@ -122,5 +131,5 @@ typedef enum {
   AUDIO_ERROR_EOF,
   AUDIO_ERROR_INVALID_VALUE,
 }AUDIO_ErrorTypeDef;
-
+#endif
 #endif /* SRC_BSP_SUBSYSTEM_AUDIO_WAVPLAYER_H_ */

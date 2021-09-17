@@ -33,7 +33,8 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "BSP_Includes.h"
-#define	SAMPLEPLAYER	1
+//#define	USBSAMPLEPLAYER	1
+#define	QSPISAMPLEPLAYER	1
 //#define	WAVPLAYER	1
 //#define	SINEPLAYER	1
 #include "bB808.h"

@@ -114,8 +114,10 @@ void MX_USB_HOST_Process(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint32_t	usbdisk_ready=0,audio_init_flag=0,samplerate;
+uint32_t	usbdisk_ready=0,audio_init_flag=0,mididev_flag;
 uint8_t	tim1sec_flag;
+extern	void USBH_MIDI_Rx(USBH_HandleTypeDef *phost);
+
 /* USER CODE END 0 */
 
 /**
@@ -125,7 +127,6 @@ uint8_t	tim1sec_flag;
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint8_t	msgstate = 0;
 
   /* USER CODE END 1 */
 
@@ -190,13 +191,19 @@ int main(void)
 #ifdef WAVPLAYER
 				//PlayerInit();
 				//AUDIO_PLAYER_Init();
-				AUDIO_PLAYER_Start("sample.wav");
+				AUDIO_PLAYER_Start("sample7.wav");
 #endif
-#ifdef SAMPLEPLAYER
+#ifdef USBSAMPLEPLAYER
 				SamplePlayerStart("sample.wav");
 #endif
 #ifdef SINEPLAYER
 				InitSinePlay();
+#endif
+#ifdef QSPISAMPLEPLAYER
+				//QSPI_ReadDescriptorFileFromUSB();
+				QSPISamplePlayerInit();
+				QSPISamplePlayerStart();
+				QSPIInstrumentON(0);
 #endif
 				audio_init_flag = 1;
 			}
@@ -213,6 +220,7 @@ int main(void)
 			SinePlay_Process();
 		}
 #endif
+		/*
 		if ( tim1sec_flag == 1 )
 		{
 			tim1sec_flag = 0 ;
@@ -224,7 +232,18 @@ int main(void)
 			msgstate &= 0x01;
 
 		}
+		*/
+#ifdef QSPISAMPLEPLAYER
+		if ( audio_init_flag == 1 )
+		{
+			if ( mididev_flag == 1 )
+			{
+				mididev_flag = 0;
+				restart_midi();
+			}
+		}
 
+#endif
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
@@ -289,10 +308,10 @@ void SystemClock_Config(void)
                               |RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_SAI2
                               |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_I2C2
                               |RCC_PERIPHCLK_I2C3|RCC_PERIPHCLK_CLK48;
-  PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
-  PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
+  PeriphClkInitStruct.PLLSAI.PLLSAIN = 316;
+  PeriphClkInitStruct.PLLSAI.PLLSAIQ = 14;
   PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV2;
-  PeriphClkInitStruct.PLLSAIDivQ = 1;
+  PeriphClkInitStruct.PLLSAIDivQ = 2;
   PeriphClkInitStruct.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLSAI;
   PeriphClkInitStruct.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Uart4ClockSelection = RCC_UART4CLKSOURCE_PCLK1;

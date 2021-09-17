@@ -1,13 +1,14 @@
 /*
- * sample_mngr.h
+ * usb_sample_mngr.h
  *
  *  Created on: Sep 13, 2021
  *      Author: fil
  */
 
-#ifndef SRC_BB808_SAMPLE_MNGR_H_
-#define SRC_BB808_SAMPLE_MNGR_H_
+#ifndef SRC_BB808_USB_SAMPLE_MNGR_H_
+#define SRC_BB808_USB_SAMPLE_MNGR_H_
 
+#ifdef	USBSAMPLEPLAYER
 
 #define	MAX_NUM_SAMPLES				8
 //#define SAMPLE_OUT_BUFFER_SIZE		2048
@@ -23,10 +24,12 @@ typedef struct {
 
 typedef struct {
 	uint32_t	fptr[MAX_NUM_SAMPLES];
+	uint32_t	sample_len[MAX_NUM_SAMPLES];
 	uint32_t	sample_flag[MAX_NUM_SAMPLES];
 	uint8_t		sample_name[MAX_NUM_SAMPLES][SAMPLE_NAME_MAX_LEN];	// max file len is SAMPLE_NAME_MAX_LEN
 	uint32_t 	sample_rate[MAX_NUM_SAMPLES];
 	uint8_t		midi_key[MAX_NUM_SAMPLES];
+	uint32_t 	block_number[MAX_NUM_SAMPLES];
 	uint8_t		flag;
 }Sample_DescriptorTypeDef;
 
@@ -57,4 +60,6 @@ typedef struct {
   uint32_t SubChunk2Size; /* 40 */
 }SampleWAV_FormatTypeDef;
 
-#endif /* SRC_BB808_SAMPLE_MNGR_H_ */
+#endif	/* USBSAMPLEPLAYER */
+
+#endif /* SRC_BB808_USB_SAMPLE_MNGR_H_ */

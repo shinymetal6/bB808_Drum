@@ -8,6 +8,8 @@
 #include "main.h"
 #include "ff.h"
 
+#ifdef USE_FATUTILS
+
 extern	USBH_HandleTypeDef hUSBHost;
 
 static int32_t recurseLevel = -1;
@@ -40,7 +42,6 @@ FRESULT Explore_Disk(char *path, uint8_t recu_level)
 
       line_idx++;
 
-#ifdef pippo
       if (line_idx > YWINDOW_SIZE)
       {
         line_idx = 0;
@@ -53,7 +54,6 @@ FRESULT Explore_Disk(char *path, uint8_t recu_level)
           /* Wait for User Input */
         }
       }
-#endif
 /*
       if (recu_level == 1)
       {
@@ -93,3 +93,4 @@ FRESULT Explore_Disk(char *path, uint8_t recu_level)
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+#endif
