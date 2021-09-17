@@ -88,10 +88,6 @@ uint32_t	sample;
 			{
 				BSP_QSPI_Read((uint8_t *)file_buf[instrument_number], INSTRUMENT_SIZE*instrument_number + Instrument.qspi_ptr[instrument_number], AUDIO_OUT_BUFFER_SIZE);
 				Instrument.qspi_ptr[instrument_number] += AUDIO_OUT_BUFFER_SIZE;
-/*
-				for(i=limitlow;i<limithi;i++)
-					out_buf[i] = file_buf[instrument_number][i-limitlow];
-					*/
 			}
 		}
 	}
@@ -100,27 +96,20 @@ uint32_t	sample;
 
 	for(i=limitlow;i<limithi;i++)
 	{
-		sample =	file_buf[0][i-limitlow] +
-					file_buf[1][i-limitlow] +
-					file_buf[2][i-limitlow] +
-					file_buf[3][i-limitlow] +
-					file_buf[4][i-limitlow] +
-					file_buf[5][i-limitlow] +
-					file_buf[6][i-limitlow] +
-					file_buf[7][i-limitlow];
+		sample =	__REVSH(file_buf[0][i-limitlow] )+
+					__REVSH(file_buf[1][i-limitlow]) +
+					__REVSH(file_buf[2][i-limitlow]) +
+					__REVSH(file_buf[3][i-limitlow]) +
+					__REVSH(file_buf[4][i-limitlow]) +
+					__REVSH(file_buf[5][i-limitlow]) +
+					__REVSH(file_buf[6][i-limitlow]) +
+					__REVSH(file_buf[7][i-limitlow]);
 
+		sample >>= 4;
 		out_buf[i] = (uint16_t )sample;
 
 	}
-	/*
-	for(i=limitlow;i<limithi;i++)
-	{
-		sample = 0;
-		for(instrument_number=0;instrument_number<NUM_INSTRUMENT;instrument_number++)
-			sample = file_buf[0][i-limitlow];
-		out_buf[i] = sample >> 4;
-	}
-*/
+
 	__enable_irq();
 	HAL_GPIO_WritePin(ARD_D8_GPIO_GPIO_Port, ARD_D8_GPIO_Pin, GPIO_PIN_RESET);
 	return ;
