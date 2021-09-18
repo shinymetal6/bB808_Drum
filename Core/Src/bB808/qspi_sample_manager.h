@@ -30,10 +30,11 @@
 typedef struct {
 	uint32_t		qspi_ptr[NUM_INSTRUMENT];
 	uint32_t		sample_len[NUM_INSTRUMENT];
-	uint32_t		sample_flag[NUM_INSTRUMENT];
+	//uint32_t		sample_flag[NUM_INSTRUMENT];
 	uint8_t			sample_name[NUM_INSTRUMENT][SAMPLE_NAME_MAX_LEN];	// max file len is SAMPLE_NAME_MAX_LEN
 	uint32_t 		sample_rate[NUM_INSTRUMENT];
 	uint8_t			midi_key[NUM_INSTRUMENT];
+	uint32_t		sample_active_flag;
 	uint8_t			flag;
 }Instrument_TypeDef;
 /* sample_flag defines */

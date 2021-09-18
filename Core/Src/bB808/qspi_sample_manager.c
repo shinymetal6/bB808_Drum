@@ -93,14 +93,13 @@ uint8_t		instrument_number = 0;
 
 	for(instrument_number=0;instrument_number<NUM_INSTRUMENT;instrument_number++)
 	{
-		if ( Instrument.sample_flag[instrument_number] != 0 )
+		if ( (Instrument.sample_active_flag & (1 << instrument_number)) != 0 )
 		{
-
 			if(Instrument.qspi_ptr[instrument_number] >= Instrument.sample_len[instrument_number])
 			{
 				for(i=limitlow;i<limithi;i++)
 					file_buf[instrument_number][i-limitlow] = 0;
-				Instrument.sample_flag[instrument_number] = 0;
+				Instrument.sample_active_flag &= ~(1 << instrument_number);
 				Instrument.qspi_ptr[instrument_number] = HEADER_SIZE;
 			}
 			else
@@ -177,7 +176,7 @@ uint32_t	i;
 		if ( Instrument.midi_key[i] == instrument_number)
 		{
 			Instrument.qspi_ptr[i] = HEADER_SIZE;
-			Instrument.sample_flag[i] |=  SAMPLE_ACTIVE_BIT;
+			Instrument.sample_active_flag |= (1 << i);
 			return;
 		}
 	}
