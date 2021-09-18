@@ -90,11 +90,11 @@
 						</tool>
 					</fileInfo>
 					<sourceEntries>
-						<entry excluding="App/usb_host.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="USB_HOST"/>
-						<entry excluding="Src/bB808/qspi_sample_manager_OLD.c|Src/BSP/Utilities/CPU|Src/BSP/Utilities/Log|Src/BSP/Utilities/JPEG" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
+						<entry excluding="Src/BSP/LCD_Log.c|Src/bB808/qspi_sample_manager_OLD.c|Src/BSP/Utilities/CPU|Src/BSP/Utilities/Log|Src/BSP/Utilities/JPEG" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FATFS"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+						<entry excluding="App/usb_host.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="USB_HOST"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -178,11 +178,11 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="App/usb_host.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="USB_HOST"/>
-						<entry excluding="Src/bB808/qspi_sample_manager_OLD.c|Src/BSP/Utilities/CPU|Src/BSP/Utilities/Log|Src/BSP/Utilities/JPEG" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
+						<entry excluding="Src/BSP/LCD_Log.c|Src/bB808/qspi_sample_manager_OLD.c|Src/BSP/Utilities/CPU|Src/BSP/Utilities/Log|Src/BSP/Utilities/JPEG" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FATFS"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+						<entry excluding="App/usb_host.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="USB_HOST"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

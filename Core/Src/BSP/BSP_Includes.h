@@ -15,7 +15,10 @@
 #include "stm32f723e_discovery_qspi.h"
 #include "stm32f723e_discovery_ts.h"
 
-extern	void tim1sec_callback(void);
+extern	uint8_t	tim50msec_flag;
+extern	uint8_t	tim100msec_flag;
+
+extern	void tim50msec_callback(void);
 extern	void InitLCD(char *title);
 
 #define LCD_UsrLogY(...)	LCD_LineColor = LCD_COLOR_YELLOW;\

@@ -107,8 +107,9 @@ __weak void USB_CallFromHS(USBH_HandleTypeDef *phost, uint8_t id)
 		MSC_Application(1);
 }
 
-extern	uint8_t	tim1sec_flag;
-void tim1sec_callback(void)
+void tim50msec_callback(void)
 {
-	tim1sec_flag = 1;
+	tim50msec_flag = 1;
+	tim100msec_flag ++;
+	tim100msec_flag &= 1;
 }

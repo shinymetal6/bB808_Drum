@@ -115,7 +115,8 @@ void MX_USB_HOST_Process(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint32_t	usbdisk_ready=0,audio_init_flag=0,mididev_flag;
-uint8_t	tim1sec_flag;
+uint8_t	tim50msec_flag;
+uint8_t	tim100msec_flag;
 extern	void USBH_MIDI_Rx(USBH_HandleTypeDef *phost);
 
 /* USER CODE END 0 */
@@ -223,19 +224,7 @@ int main(void)
 			SinePlay_Process();
 		}
 #endif
-		/*
-		if ( tim1sec_flag == 1 )
-		{
-			tim1sec_flag = 0 ;
-			if ( msgstate == 0 )
-				BSP_LCD_DisplayStringAt(0, 35, (uint8_t *)"Irq 1sec write test from bkg", CENTER_MODE);
-			else
-				BSP_LCD_DisplayStringAt(0, 35, (uint8_t *)"                            ", CENTER_MODE);
-			msgstate++;
-			msgstate &= 0x01;
 
-		}
-		*/
 #ifdef QSPISAMPLEPLAYER
 		extern	uint8_t		control_message, program_message;
 
@@ -255,7 +244,22 @@ int main(void)
 					QSPIInstrumentDelayTypeControlMessage();
 			}
 		}
-
+		uint8_t sh;
+		if ( tim50msec_flag == 1)
+		{
+			tim50msec_flag = 0;
+			sh++;
+			if (sh > 5 )
+				DrawBitIndicator(1);
+			else
+				DrawBitIndicator(0);
+			if (sh > 9 )
+				sh = 0;
+		}
+		if ( tim100msec_flag == 1)
+		{
+			tim100msec_flag = 0;
+		}
 #endif
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
@@ -962,9 +966,9 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 10800;
+  htim6.Init.Prescaler = 1080;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 10000;
+  htim6.Init.Period = 5000;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {

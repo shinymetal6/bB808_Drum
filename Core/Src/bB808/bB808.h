@@ -8,8 +8,9 @@
 #ifndef SRC_BB808_BB808_H_
 #define SRC_BB808_BB808_H_
 
-#include "qspi_sample_manager.h"
 #include "main.h"
+#include "qspi_sample_manager.h"
+#include "delay_line.h"
 #include "usb_sample_mngr.h"
 
 
