@@ -85,6 +85,8 @@ uint8_t rtext[100];                                   /* File read buffer */
 	BSP_LCD_DisplayStringAt(0, 70, (uint8_t *)"USB OK", CENTER_MODE);
 	BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
 #endif
+	BSP_LCD_SetFont(&Font16);
+	BSP_LCD_DisplayStringAt(0, 20, (uint8_t *)"Ready", CENTER_MODE);
 	usbdisk_ready = 1;
 
 	/* Unlink the USB disk I/O driver */

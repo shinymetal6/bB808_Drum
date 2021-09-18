@@ -7,17 +7,19 @@
 
 #include "main.h"
 #include "qspi_sample_manager.h"
+#include "delay_line.h"
 #include "fatfs.h"
 
 #ifdef QSPISAMPLEPLAYER
 
 static Instrument_TypeDef  Instrument;
-static uint32_t uwVolume = 70;
-__attribute__ ((aligned (16)))  uint16_t file_buf[NUM_INSTRUMENT][AUDIO_OUT_HALFBUFFER_SIZE];
-__attribute__ ((aligned (16)))  uint16_t out_buf[AUDIO_OUT_BUFFER_SIZE];
+static uint32_t CodecVolume = 100;
+__attribute__ ((aligned (16)))  int16_t file_buf[NUM_INSTRUMENT][AUDIO_OUT_HALFBUFFER_SIZE];
+__attribute__ ((aligned (16)))  int16_t out_buf[AUDIO_OUT_BUFFER_SIZE];
 __attribute__ ((aligned (16)))  QSPISample_HeaderTypeDef QSPISample_Header[NUM_INSTRUMENT]; //,ReadSample_Header[NUM_INSTRUMENT];
 
-#define	FROM_QSPI	1
+uint8_t	control_message = 0, program_message = 0;
+uint8_t	delay_value , delay_weight_value , delay_type=0;
 
 void QSPISamplePlayerInit(void)
 {
@@ -44,18 +46,35 @@ uint32_t		i;
 		for(i=0;i<AUDIO_OUT_HALFBUFFER_SIZE;i++)
 			file_buf[instrument_number][i] = 0;
 	}
-	if(BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_BOTH, uwVolume, Instrument.sample_rate[0]) != 0) // get sample rate from first sample
+	if(BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_BOTH, CodecVolume, Instrument.sample_rate[0]) != 0) // get sample rate from first sample
 		return;
 	BSP_AUDIO_OUT_SetAudioFrameSlot(CODEC_AUDIOFRAME_SLOT_02);
-	BSP_AUDIO_OUT_Play(out_buf, AUDIO_OUT_BUFFER_SIZE);
+	BSP_AUDIO_OUT_Play((uint16_t* )out_buf, AUDIO_OUT_BUFFER_SIZE);
 	return;
+}
+
+void QSPIOutMixer(uint32_t 	limitlow,uint32_t limithi)
+{
+int32_t		sample,i;
+	for(i=limitlow;i<limithi;i++)
+	{
+		sample =	file_buf[0][i-limitlow] +
+					file_buf[1][i-limitlow] +
+					file_buf[2][i-limitlow] +
+					file_buf[3][i-limitlow] +
+					file_buf[4][i-limitlow] +
+					file_buf[5][i-limitlow] +
+					file_buf[6][i-limitlow] +
+					file_buf[7][i-limitlow];
+
+		out_buf[i] = DelayLine((int16_t )((float )sample * 0.125F),delay_type );
+	}
 }
 
 void Sample_Process(void)
 {
 uint32_t 	i,limitlow,limithi;
 uint8_t		instrument_number = 0;
-uint32_t	sample;
 
 	HAL_GPIO_WritePin(ARD_D8_GPIO_GPIO_Port, ARD_D8_GPIO_Pin, GPIO_PIN_SET);
 	__disable_irq();
@@ -94,22 +113,7 @@ uint32_t	sample;
 	Instrument.flag &= ~WAVPLAY_STATE_FLAG_HALF;
 	Instrument.flag &= ~WAVPLAY_STATE_FLAG_FULL;
 
-	for(i=limitlow;i<limithi;i++)
-	{
-		sample =	__REVSH(file_buf[0][i-limitlow] )+
-					__REVSH(file_buf[1][i-limitlow]) +
-					__REVSH(file_buf[2][i-limitlow]) +
-					__REVSH(file_buf[3][i-limitlow]) +
-					__REVSH(file_buf[4][i-limitlow]) +
-					__REVSH(file_buf[5][i-limitlow]) +
-					__REVSH(file_buf[6][i-limitlow]) +
-					__REVSH(file_buf[7][i-limitlow]);
-
-		sample >>= 4;
-		out_buf[i] = (uint16_t )sample;
-
-	}
-
+	QSPIOutMixer(limitlow,limithi);
 	__enable_irq();
 	HAL_GPIO_WritePin(ARD_D8_GPIO_GPIO_Port, ARD_D8_GPIO_Pin, GPIO_PIN_RESET);
 	return ;
@@ -179,9 +183,73 @@ uint32_t	i;
 	}
 }
 
+
+
 void QSPIInstrumentOFF(uint8_t instrument_number)
 {
 	//QSPISample_Descriptor.sample_flag[instrument_number] &= ~SAMPLE_ACTIVE_BIT;
+}
+
+
+void QSPIInstrumentDelayControlMessage(void)
+{
+uint8_t lcd_string[32];
+	BSP_LCD_SetFont(&Font16);
+	sprintf((char *)lcd_string,"Delay  : %d    ",delay_value*DELAY_LINE_MULT);
+	BSP_LCD_DisplayStringAt(0, 40, lcd_string, LEFT_MODE);
+	control_message = 0;
+}
+
+void QSPIInstrumentDelayWeightControlMessage(void)
+{
+uint8_t lcd_string[32] , weight;
+	BSP_LCD_SetFont(&Font16);
+	weight = (uint16_t )(delay_weight*200.0F);
+	sprintf((char *)lcd_string,"Weight : %d%%   ",(int )weight);
+	BSP_LCD_DisplayStringAt(0, 60, lcd_string, LEFT_MODE);
+	control_message = 0;
+}
+
+void QSPIInstrumentDelayTypeControlMessage(void)
+{
+uint8_t lcd_string[32];
+	BSP_LCD_SetFont(&Font16);
+	if ( delay_type == DELAY_TYPE_FLANGER )
+		sprintf((char *)lcd_string,"Type   : Flanger");
+	else
+		sprintf((char *)lcd_string,"Type   : Reverb ");
+
+	BSP_LCD_DisplayStringAt(0, 80, lcd_string, LEFT_MODE);
+	program_message = 0;
+}
+
+void QSPIInstrumentControlChange(uint8_t control , uint8_t value)
+{
+	delay_value = value;
+	if ( control == 1 )
+	{
+		delay_extraction_pointer = DELAY_LINE_SIZE - (delay_insertion_pointer + delay_value * DELAY_LINE_MULT);
+		delay_extraction_pointer &= (DELAY_LINE_SIZE-1);
+	}
+	if ( control == 2 )
+	{
+		delay_weight = ((float )value / 256.0F);	// max weight is 50%
+	}
+	control_message = control;
+}
+
+void QSPIInstrumentProgramChange(uint8_t program, uint8_t value)
+{
+	if ( program == 0 )
+	{
+		program_message = 1;
+		delay_type = DELAY_TYPE_FLANGER;
+	}
+	if ( program == 1 )
+	{
+		program_message = 1;
+		delay_type = DELAY_TYPE_REVERB;
+	}
 }
 
 uint8_t	qspi_midi_buffer[64],qspi_midi_rxbuffer[64];
@@ -189,7 +257,8 @@ extern	USBH_StatusTypeDef  USBH_MIDI_Receive(USBH_HandleTypeDef *phost, uint8_t 
 extern	uint32_t	mididev_flag;
 USBH_HandleTypeDef *midi_phost;
 
-void restart_midi(void)
+
+void QSPIRestartMIDI(void)
 {
 	USBH_MIDI_Receive(midi_phost, qspi_midi_rxbuffer, 64);
 }
@@ -207,7 +276,7 @@ uint8_t	i,k=0,j;
 			i +=3;
 		else
 		{
-			if ((qspi_midi_rxbuffer[i] == 0x0b ) || (qspi_midi_rxbuffer[i] == 0x08 ) || (qspi_midi_rxbuffer[i] == 0x09 ))
+			if ((qspi_midi_rxbuffer[i] == 0x0c ) || (qspi_midi_rxbuffer[i] == 0x0b ) || (qspi_midi_rxbuffer[i] == 0x08 ) || (qspi_midi_rxbuffer[i] == 0x09 ))
 			{
 				for ( j=0;j<4 ; j++,k++,i++)
 					qspi_midi_buffer[k] = qspi_midi_rxbuffer[i];
@@ -215,13 +284,15 @@ uint8_t	i,k=0,j;
 			}
 		}
 	}
-	if (qspi_midi_rxbuffer[0] == 0x09 )
-		QSPIInstrumentON(qspi_midi_buffer[2]);
-	if (qspi_midi_rxbuffer[0] == 0x08 )
-		QSPIInstrumentOFF(qspi_midi_buffer[2]);
-	mididev_flag = 1;
+	switch(qspi_midi_rxbuffer[0])
+	{
+	case	MIDI_NOTE_ON	:	QSPIInstrumentON(qspi_midi_buffer[2]); break;
+	case	MIDI_NOTE_OFF	:	QSPIInstrumentOFF(qspi_midi_buffer[2]); break;
+	case	MIDI_CC			:	QSPIInstrumentControlChange(qspi_midi_buffer[2],qspi_midi_buffer[3]); break;
+	case	MIDI_PC			:	QSPIInstrumentProgramChange(qspi_midi_buffer[2],qspi_midi_buffer[3]); break;
+	}
 
-	//USBH_MIDI_Receive(midi_phost, qspi_midi_rxbuffer, 64);
+	mididev_flag = 1;
 }
 
 #endif

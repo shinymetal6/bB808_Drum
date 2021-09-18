@@ -203,7 +203,9 @@ int main(void)
 				//QSPI_ReadDescriptorFileFromUSB();
 				QSPISamplePlayerInit();
 				QSPISamplePlayerStart();
-				QSPIInstrumentON(0);
+				QSPIInstrumentDelayControlMessage();
+				QSPIInstrumentDelayWeightControlMessage();
+				QSPIInstrumentDelayTypeControlMessage();
 #endif
 				audio_init_flag = 1;
 			}
@@ -234,12 +236,22 @@ int main(void)
 		}
 		*/
 #ifdef QSPISAMPLEPLAYER
+		extern	uint8_t		control_message, program_message;
+
 		if ( audio_init_flag == 1 )
 		{
 			if ( mididev_flag == 1 )
 			{
 				mididev_flag = 0;
-				restart_midi();
+				QSPIRestartMIDI();
+				switch(control_message)
+				{
+				case	1	:	QSPIInstrumentDelayControlMessage(); break;
+				case	2	:	QSPIInstrumentDelayWeightControlMessage();break;
+				default 	:	control_message = 0;
+				}
+				if(program_message == 1)
+					QSPIInstrumentDelayTypeControlMessage();
 			}
 		}
 

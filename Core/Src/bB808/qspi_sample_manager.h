@@ -10,7 +10,7 @@
 
 #ifdef QSPISAMPLEPLAYER
 
-#define AUDIO_OUT_BUFFER_SIZE                      4096
+#define AUDIO_OUT_BUFFER_SIZE                      2048
 #define AUDIO_OUT_HALFBUFFER_SIZE                  (AUDIO_OUT_BUFFER_SIZE/2)
 
 #define	WAVPLAY_STATE_FLAG_HALF		1
@@ -23,7 +23,6 @@
 #define	NUMSECTOR4K_PER_INSTRUMENT	(INSTRUMENT_SIZE / 4096)
 
 #define	NUM_INSTRUMENT				(QSPI_SIZE / INSTRUMENT_SIZE)
-//#define	NUMSECTORS					(QSPI_SIZE / SECTOR64K)
 #define	HEADER_SIZE					32
 #define	SAMPLE_NAME_MAX_LEN			20
 
@@ -68,9 +67,20 @@ typedef struct {
 }QSPISample_HeaderTypeDef;
 
 
+/* MIDI defs */
+#define	MIDI_NOTE_ON	0x09
+#define	MIDI_NOTE_OFF	0x08
+#define	MIDI_CC			0x0b
+#define	MIDI_PC			0x0c
+
 extern	void QSPISamplePlayerInit(void);
 extern	void QSPISamplePlayerStart(void);
 extern	void QSPIInstrumentON(uint8_t instrument_number);
+extern	void QSPIRestartMIDI(void);
+
+extern	void QSPIInstrumentDelayControlMessage(void);
+extern	void QSPIInstrumentDelayWeightControlMessage(void);
+extern	void QSPIInstrumentDelayTypeControlMessage(void);
 
 #endif /* #ifdef QSPISAMPLEPLAYER */
 #endif /* SRC_BB808_QSPI_SAMPLE_MANAGER_H_ */
