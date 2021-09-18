@@ -228,8 +228,9 @@ void QSPIInstrumentControlChange(uint8_t control , uint8_t value)
 	delay_value = value;
 	if ( control == 1 )
 	{
-		delay_extraction_pointer = DELAY_LINE_SIZE - (delay_insertion_pointer + delay_value * DELAY_LINE_MULT);
+		delay_extraction_pointer = delay_insertion_pointer - delay_value*DELAY_LINE_MULT - 1;
 		delay_extraction_pointer &= (DELAY_LINE_SIZE-1);
+
 	}
 	if ( control == 2 )
 	{

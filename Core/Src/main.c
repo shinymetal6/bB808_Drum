@@ -201,6 +201,7 @@ int main(void)
 #endif
 #ifdef QSPISAMPLEPLAYER
 				//QSPI_ReadDescriptorFileFromUSB();
+				DelayLineInit();
 				QSPISamplePlayerInit();
 				QSPISamplePlayerStart();
 				QSPIInstrumentDelayControlMessage();
