@@ -10,16 +10,15 @@
 
 #define	DELAY_LINE_SIZE		(65536)
 #define	DELAY_LINE_MULT		(DELAY_LINE_SIZE/128)
+/*
 #define	DELAY_TYPE_FLANGER	0
 #define	DELAY_TYPE_REVERB	1
-#define PSRAM_DEVICE_ADDR  ((uint32_t)0x60000000)
-
-extern	float		delay_weight;
-extern	uint32_t	delay_insertion_pointer,delay_extraction_pointer;
-extern	uint8_t		control_message, program_message;
-
+*/
+#define	MAX_DELAY	500
 
 extern	int16_t DelayLine(int16_t sample ,  uint8_t delay_type);
 extern	void DelayLineInit(void);
+extern	void DrawDelay(uint8_t hilight);
+extern	void Delay_IncDec(void);
 
 #endif /* INC_BB101_VCO_COMPONENTS_EFFECTS_DELAY_LINE_H_ */

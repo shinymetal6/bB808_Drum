@@ -90,8 +90,8 @@ void Error_Handler(void);
 #define PSRAM_NE1_GPIO_Port GPIOD
 #define UART_TXD_WIFI_RX_Pin GPIO_PIN_12
 #define UART_TXD_WIFI_RX_GPIO_Port GPIOC
-#define STMOD__TIM2_CH1_2_ETR_Pin GPIO_PIN_15
-#define STMOD__TIM2_CH1_2_ETR_GPIO_Port GPIOA
+#define ENCODER_DIR_Pin GPIO_PIN_15
+#define ENCODER_DIR_GPIO_Port GPIOA
 #define ARD_D8_GPIO_Pin GPIO_PIN_4
 #define ARD_D8_GPIO_GPIO_Port GPIOE
 #define ARD_D3_TIM9_CH1_Pin GPIO_PIN_5
@@ -236,8 +236,8 @@ void Error_Handler(void);
 #define LCD_PSRAM_D0_GPIO_Port GPIOD
 #define QSPI_D3_Pin GPIO_PIN_13
 #define QSPI_D3_GPIO_Port GPIOD
-#define ARD_D10_TIM2_CH2_SPI1_NSS_Pin GPIO_PIN_1
-#define ARD_D10_TIM2_CH2_SPI1_NSS_GPIO_Port GPIOA
+#define ENCODER_CLK_Pin GPIO_PIN_1
+#define ENCODER_CLK_GPIO_Port GPIOA
 #define SYS_B_User_Pin GPIO_PIN_0
 #define SYS_B_User_GPIO_Port GPIOA
 #define ARD_A1_Pin GPIO_PIN_4
@@ -258,14 +258,12 @@ void Error_Handler(void);
 #define PSRAM_A16_GPIO_Port GPIOD
 #define LCD_PSRAM_D15_Pin GPIO_PIN_10
 #define LCD_PSRAM_D15_GPIO_Port GPIOD
-#define ARD_D1_USART2_TX_Pin GPIO_PIN_2
-#define ARD_D1_USART2_TX_GPIO_Port GPIOA
 #define ARD_A0_Pin GPIO_PIN_6
 #define ARD_A0_GPIO_Port GPIOA
 #define ARD_D13_SPI1_SCK_Pin GPIO_PIN_5
 #define ARD_D13_SPI1_SCK_GPIO_Port GPIOA
-#define ARD_D2_GPIO_Pin GPIO_PIN_5
-#define ARD_D2_GPIO_GPIO_Port GPIOC
+#define ENCODER_SW_Pin GPIO_PIN_5
+#define ENCODER_SW_GPIO_Port GPIOC
 #define PSRAM_A6_Pin GPIO_PIN_12
 #define PSRAM_A6_GPIO_Port GPIOF
 #define PSRAM_A9_Pin GPIO_PIN_15
@@ -286,8 +284,6 @@ void Error_Handler(void);
 #define LCD_PSRAM_D14_GPIO_Port GPIOD
 #define LCD_PSRAM_D13_Pin GPIO_PIN_8
 #define LCD_PSRAM_D13_GPIO_Port GPIOD
-#define ARD_D0_USART2_RX_Pin GPIO_PIN_3
-#define ARD_D0_USART2_RX_GPIO_Port GPIOA
 #define SYS_LD_USER1_Pin GPIO_PIN_7
 #define SYS_LD_USER1_GPIO_Port GPIOA
 #define SYS_LD_USER2_Pin GPIO_PIN_1

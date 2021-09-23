@@ -44,6 +44,13 @@ MEMORY
 SECTIONS
 {
   /* The startup code into "FLASH" Rom type memory */
+    .tables :
+  {
+    . = ALIGN(4);
+    KEEP(*(.tables)) /* Startup code */
+    . = ALIGN(4);
+  } >FLASH
+  
   .isr_vector :
   {
     . = ALIGN(4);

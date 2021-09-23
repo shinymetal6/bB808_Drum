@@ -22,7 +22,7 @@ USBH_HandleTypeDef hUSBHost; /* USB Host handle */
 
 extern	uint32_t	usbdisk_ready;
 
-void InitLCD(char *title)
+__weak  void InitLCD(char *title)
 {
 	  BSP_LCD_Init();
 	  BSP_LCD_Clear(LCD_COLOR_BLACK);
@@ -42,7 +42,7 @@ void USB_Error_Handler(char *text)
 
 uint8_t	midi_buf[64],msg[64],midi_buffer[64];
 
-void MSC_Application(uint8_t from)
+__weak  void MSC_Application(uint8_t from)
 {
 #ifdef VERBOSE_USB_HELPERS
 FRESULT res;                                          /* FatFs function common result code */
@@ -107,9 +107,3 @@ __weak void USB_CallFromHS(USBH_HandleTypeDef *phost, uint8_t id)
 		MSC_Application(1);
 }
 
-void tim50msec_callback(void)
-{
-	tim50msec_flag = 1;
-	tim100msec_flag ++;
-	tim100msec_flag &= 1;
-}

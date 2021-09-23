@@ -126,6 +126,8 @@ void MX_USB_HOST_Process(void)
 /*
  * user callback definition
  */
+extern	void USB_DisconnectFromHS(USBH_HandleTypeDef *phost, uint8_t id);
+
 static void USBH_UserProcess1  (USBH_HandleTypeDef *phost, uint8_t id)
 {
   /* USER CODE BEGIN CALL_BACK_2 */
@@ -136,6 +138,8 @@ static void USBH_UserProcess1  (USBH_HandleTypeDef *phost, uint8_t id)
 
   case HOST_USER_DISCONNECTION:
   Appli_state = APPLICATION_DISCONNECT;
+  USB_DisconnectFromHS(phost,id);
+
   break;
 
   case HOST_USER_CLASS_ACTIVE:

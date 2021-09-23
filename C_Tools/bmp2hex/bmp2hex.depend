@@ -1,0 +1,13 @@
+# depslib dependency file v1.0
+1629955739 source:/Devel/Stm32Sw/F429_DHT11/C_Tools/bmp2hex/main.c
+	<stdio.h>
+	<stdlib.h>
+
+1629956121 source:/Devel/Stm32Sw/GreenHouse_F429/C_Tools/bmp2hex/main.c
+	<stdio.h>
+	<stdlib.h>
+
+1632325307 source:/Devel/Stm32Sw/bB808_Drum/C_Tools/bmp2hex/main.c
+	<stdio.h>
+	<stdlib.h>
+

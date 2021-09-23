@@ -83,5 +83,7 @@ extern	void QSPIInstrumentDelayControlMessage(void);
 extern	void QSPIInstrumentDelayWeightControlMessage(void);
 extern	void QSPIInstrumentDelayTypeControlMessage(void);
 
+extern	void QSPI_Process_MIDI(void);
+
 #endif /* #ifdef QSPISAMPLEPLAYER */
 #endif /* SRC_BB808_QSPI_SAMPLE_MANAGER_H_ */

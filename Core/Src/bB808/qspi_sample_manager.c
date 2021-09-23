@@ -182,14 +182,12 @@ uint32_t	i;
 	}
 }
 
-
-
 void QSPIInstrumentOFF(uint8_t instrument_number)
 {
 	//QSPISample_Descriptor.sample_flag[instrument_number] &= ~SAMPLE_ACTIVE_BIT;
 }
 
-
+/*
 void QSPIInstrumentDelayControlMessage(void)
 {
 uint8_t lcd_string[32];
@@ -198,42 +196,19 @@ uint8_t lcd_string[32];
 	BSP_LCD_DisplayStringAt(0, 40, lcd_string, LEFT_MODE);
 	control_message = 0;
 }
-
-void QSPIInstrumentDelayWeightControlMessage(void)
-{
-uint8_t lcd_string[32] , weight;
-	BSP_LCD_SetFont(&Font16);
-	weight = (uint16_t )(delay_weight*200.0F);
-	sprintf((char *)lcd_string,"Weight : %d%%   ",(int )weight);
-	BSP_LCD_DisplayStringAt(0, 60, lcd_string, LEFT_MODE);
-	control_message = 0;
-}
-
-void QSPIInstrumentDelayTypeControlMessage(void)
-{
-uint8_t lcd_string[32];
-	BSP_LCD_SetFont(&Font16);
-	if ( delay_type == DELAY_TYPE_FLANGER )
-		sprintf((char *)lcd_string,"Type   : Flanger");
-	else
-		sprintf((char *)lcd_string,"Type   : Reverb ");
-
-	BSP_LCD_DisplayStringAt(0, 80, lcd_string, LEFT_MODE);
-	program_message = 0;
-}
-
+*/
 void QSPIInstrumentControlChange(uint8_t control , uint8_t value)
 {
 	delay_value = value;
 	if ( control == 1 )
 	{
-		delay_extraction_pointer = delay_insertion_pointer - delay_value*DELAY_LINE_MULT - 1;
-		delay_extraction_pointer &= (DELAY_LINE_SIZE-1);
+		SystemVar.delay_extraction_pointer = SystemVar.delay_insertion_pointer - delay_value*DELAY_LINE_MULT - 1;
+		SystemVar.delay_extraction_pointer &= (DELAY_LINE_SIZE-1);
 
 	}
 	if ( control == 2 )
 	{
-		delay_weight = ((float )value / 256.0F);	// max weight is 50%
+		SystemVar.delay_weight = ((float )value / 256.0F);	// max weight is 50%
 	}
 	control_message = control;
 }
@@ -243,12 +218,12 @@ void QSPIInstrumentProgramChange(uint8_t program, uint8_t value)
 	if ( program == 0 )
 	{
 		program_message = 1;
-		delay_type = DELAY_TYPE_FLANGER;
+		SystemVar.delay_type = DELAY_TYPE_FLANGER;
 	}
 	if ( program == 1 )
 	{
 		program_message = 1;
-		delay_type = DELAY_TYPE_REVERB;
+		SystemVar.delay_type = DELAY_TYPE_ECHO;
 	}
 }
 
@@ -263,36 +238,43 @@ void QSPIRestartMIDI(void)
 	USBH_MIDI_Receive(midi_phost, qspi_midi_rxbuffer, 64);
 }
 
-void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
+void QSPI_Process_MIDI(void)
 {
 uint8_t	i,k=0,j;
 
-	midi_phost = phost;
-	for(i=0;i<64;i++)
+	if ( (SystemVar.system & SYSTEM_EXTERNAL_SEQUENCER ) == SYSTEM_EXTERNAL_SEQUENCER )
 	{
-		if (( qspi_midi_buffer[i] == 0 ) && (qspi_midi_rxbuffer[i+1] == 0) && ((i & 0x03 ) == 0 ))
-			i = 64;
-		else if ((( qspi_midi_rxbuffer[i] & 0xf0) != 0 ) && ((i & 0x03 ) == 0 ))
-			i +=3;
-		else
+		for(i=0;i<64;i++)
 		{
-			if ((qspi_midi_rxbuffer[i] == 0x0c ) || (qspi_midi_rxbuffer[i] == 0x0b ) || (qspi_midi_rxbuffer[i] == 0x08 ) || (qspi_midi_rxbuffer[i] == 0x09 ))
+			if (( qspi_midi_buffer[i] == 0 ) && (qspi_midi_rxbuffer[i+1] == 0) && ((i & 0x03 ) == 0 ))
+				i = 64;
+			else if ((( qspi_midi_rxbuffer[i] & 0xf0) != 0 ) && ((i & 0x03 ) == 0 ))
+				i +=3;
+			else
 			{
-				for ( j=0;j<4 ; j++,k++,i++)
-					qspi_midi_buffer[k] = qspi_midi_rxbuffer[i];
-				i -= 1;
+				if ((qspi_midi_rxbuffer[i] == 0x0c ) || (qspi_midi_rxbuffer[i] == 0x0b ) || (qspi_midi_rxbuffer[i] == 0x08 ) || (qspi_midi_rxbuffer[i] == 0x09 ))
+				{
+					for ( j=0;j<4 ; j++,k++,i++)
+						qspi_midi_buffer[k] = qspi_midi_rxbuffer[i];
+					i -= 1;
+				}
 			}
 		}
+		switch(qspi_midi_rxbuffer[0])
+		{
+		case	MIDI_NOTE_ON	:	QSPIInstrumentON(qspi_midi_buffer[2]); break;
+		case	MIDI_NOTE_OFF	:	QSPIInstrumentOFF(qspi_midi_buffer[2]); break;
+		case	MIDI_CC			:	QSPIInstrumentControlChange(qspi_midi_buffer[2],qspi_midi_buffer[3]); break;
+		case	MIDI_PC			:	QSPIInstrumentProgramChange(qspi_midi_buffer[2],qspi_midi_buffer[3]); break;
+		}
 	}
-	switch(qspi_midi_rxbuffer[0])
-	{
-	case	MIDI_NOTE_ON	:	QSPIInstrumentON(qspi_midi_buffer[2]); break;
-	case	MIDI_NOTE_OFF	:	QSPIInstrumentOFF(qspi_midi_buffer[2]); break;
-	case	MIDI_CC			:	QSPIInstrumentControlChange(qspi_midi_buffer[2],qspi_midi_buffer[3]); break;
-	case	MIDI_PC			:	QSPIInstrumentProgramChange(qspi_midi_buffer[2],qspi_midi_buffer[3]); break;
-	}
+}
 
-	mididev_flag = 1;
+void USBH_MIDI_ReceiveCallback(USBH_HandleTypeDef *phost)
+{
+	midi_phost = phost;
+	SystemVar.system |= SYSTEM_MIDIDEV_FLAG;
+	QSPIRestartMIDI();
 }
 
 #endif
