@@ -16,13 +16,17 @@
 #define	WAVPLAY_STATE_FLAG_HALF		1
 #define	WAVPLAY_STATE_FLAG_FULL		2
 #define	QSPI_SIZE					(1024*1024*8)
-#define	INSTRUMENT_SIZE				(1024*1024)
+#define	INSTRUMENT_SIZE				(512*1024)
+#define	QSPI_DIRECTORY_WIDTH		(1024*512)
+#define	QSPI_SEQUENCER_WIDTH		(1024*512)
+#define	QSPI_DIRECTORY_ADDRESS		(QSPI_SIZE-2*QSPI_DIRECTORY_WIDTH)
+#define	QSPI_SEQUENCER_ADDRESS		(QSPI_SIZE-QSPI_DIRECTORY_WIDTH)
 #define	SECTOR64K					65536
 #define	SECTOR4K					4096
 #define	NUMSECTOR64K_PER_INSTRUMENT	(INSTRUMENT_SIZE / 65536)
 #define	NUMSECTOR4K_PER_INSTRUMENT	(INSTRUMENT_SIZE / 4096)
 
-#define	NUM_INSTRUMENT				(QSPI_SIZE / INSTRUMENT_SIZE)
+#define	NUM_INSTRUMENT				((QSPI_SIZE - QSPI_DIRECTORY_WIDTH)/ INSTRUMENT_SIZE)
 #define	HEADER_SIZE					32
 #define	SAMPLE_NAME_MAX_LEN			20
 
@@ -30,11 +34,10 @@
 typedef struct {
 	uint32_t		qspi_ptr[NUM_INSTRUMENT];
 	uint32_t		sample_len[NUM_INSTRUMENT];
-	//uint32_t		sample_flag[NUM_INSTRUMENT];
 	uint8_t			sample_name[NUM_INSTRUMENT][SAMPLE_NAME_MAX_LEN];	// max file len is SAMPLE_NAME_MAX_LEN
-	uint32_t 		sample_rate[NUM_INSTRUMENT];
 	uint8_t			midi_key[NUM_INSTRUMENT];
-	uint32_t		sample_active_flag;
+	uint32_t 		sample_rate;
+	uint16_t		sample_active_flag;
 	uint8_t			flag;
 }Instrument_TypeDef;
 /* sample_flag defines */

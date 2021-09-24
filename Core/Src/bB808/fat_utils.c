@@ -19,7 +19,7 @@ FILINFO fno;
 DIR dir;
 uint8_t line_idx = 95 , file_idx=0;
 
-	if ( SystemVar.usbdisk_ready == 1 )
+	if (( SystemVar.system & SYSTEM_USB_INIT ) == SYSTEM_USB_INIT)
 	{
 		res = f_opendir(&dir, path);
 		while (res == FR_OK)
@@ -49,14 +49,14 @@ uint8_t line_idx = 95 , file_idx=0;
 uint8_t	line[128];
 FIL		ConfFile;
 
-void ReadDescriptorFileFromUSB(void)
+void ReadDescriptorFileFromUSB(uint8_t line_idx)
 {
 uint32_t	i;
 int			instrument_number,midi_key;
 uint8_t 	filename[16],len;
-uint8_t line_idx = 95 , file_idx=0;
+uint8_t		file_idx=0;
 
-	if ( SystemVar.usbdisk_ready != 1 )
+	if (( SystemVar.system & SYSTEM_USB_INIT ) != SYSTEM_USB_INIT)
 		return;
 	if(f_open(&ConfFile, "bB808.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)
 	{
@@ -68,7 +68,7 @@ uint8_t line_idx = 95 , file_idx=0;
 				if ( sscanf((char * )line,"%d %s %d",&instrument_number,filename,&midi_key) == 3 )
 				{
 					sprintf((char *)files_on_disk[file_idx],"%d %s %d",instrument_number,filename,midi_key);
-					BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+					BSP_LCD_SetTextColor(LCD_COLOR_ORANGE);
 					BSP_LCD_DisplayStringAt(0,line_idx, files_on_disk[file_idx], LEFT_MODE);
 					line_idx += 15;
 					file_idx++;
@@ -77,6 +77,12 @@ uint8_t line_idx = 95 , file_idx=0;
 		}
 		f_close(&ConfFile);
 	}
+}
+
+void ClearDescriptorFileArea(uint8_t line_from)
+{
+	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+	BSP_LCD_FillRect(0, line_from, LCD_RESOLUTION_X, LCD_RESOLUTION_Y-DIGIT_H-line_from);
 }
 
 

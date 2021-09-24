@@ -6,22 +6,11 @@
  */
 
 #include "main.h"
-#include "beat_indicator.h"
+#include "bpm.h"
 
 extern	LCD_DrawPropTypeDef DrawProp;
 
-void DrawBitIndicator(uint8_t on)
-{
-uint32_t Color = DrawProp.TextColor;
-	if ( on == 1 )
-		DrawProp.TextColor = LCD_COLOR_RED;
-	else
-		DrawProp.TextColor = LCD_COLOR_BLACK;
-	BSP_LCD_FillCircle(8, 8, 4);
-	DrawProp.TextColor = Color;
-}
-
-void DrawBPM(uint8_t hilight)
+void BPM_Draw(uint8_t hilight)
 {
 uint32_t 	h,t,u;  // hundreds,tens,units
 
@@ -42,10 +31,6 @@ uint32_t 	h,t,u;  // hundreds,tens,units
 	}
 }
 
-void DrawBPM_Icon(void)
-{
-	BSP_LCD_DrawBitmap(MENU_BEAT_ICON_X, MENU_BEAT_ICON_Y, (uint8_t *)beat);
-}
 
 void BPM_IncDec(void)
 {
@@ -61,5 +46,15 @@ void BPM_IncDec(void)
 		if ( SystemVar.beat > MAX_BEAT )
 			SystemVar.beat = MAX_BEAT;
 	}
-	DrawBPM(1);
+	BPM_Draw(1);
+	SequencerSet();
+}
+
+void BPM_Init(void)
+{
+	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+	BSP_LCD_SetFont(&Font16);
+	BSP_LCD_DisplayStringAt(BPM_TEXT_X,BPM_TEXT_Y, (uint8_t *)"BPM", LEFT_MODE);
+	BSP_LCD_SetFont(&Font12);
 }

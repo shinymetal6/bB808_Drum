@@ -9,35 +9,52 @@
 #include "bB808.h"
 
 __attribute__ ((aligned (16))) int16_t	delay_line[DELAY_LINE_SIZE];
-//uint32_t	delay_insertion_pointer=0,delay_extraction_pointer=DELAY_LINE_SIZE/2;
-//float		delay_weight	= 0.5F;
 
 void DelayLineInit(void)
 {
-	SystemVar.delay_insertion_pointer = SystemVar.delay_extraction_pointer = 0;
+	SystemVar.delay_insertion_pointer = 0;
+	SystemVar.delay = 1;
 	SystemVar.delay_weight = 0.5F;
-	SystemVar.delay_type = DELAY_TYPE_ECHO;
+	SystemVar.delay_type = 0;
+	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+	BSP_LCD_SetFont(&Font16);
+	BSP_LCD_DisplayStringAt(DLY_TEXT_X,DLY_TEXT_Y, (uint8_t *)"None", LEFT_MODE);
+	BSP_LCD_SetFont(&Font12);
+}
+
+void DelayTypeDisplay(void)
+{
+	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+	BSP_LCD_SetFont(&Font16);
+	if (( SystemVar.delay_type & DELAY_TYPE_FLANGER) == DELAY_TYPE_FLANGER)
+		BSP_LCD_DisplayStringAt(DLY_TEXT_X,DLY_TEXT_Y, (uint8_t *)"REV ", LEFT_MODE);
+	else if (( SystemVar.delay_type & DELAY_TYPE_ECHO) == DELAY_TYPE_ECHO )
+		BSP_LCD_DisplayStringAt(DLY_TEXT_X,DLY_TEXT_Y, (uint8_t *)"ECHO", LEFT_MODE);
+	else
+		BSP_LCD_DisplayStringAt(DLY_TEXT_X,DLY_TEXT_Y, (uint8_t *)"None", LEFT_MODE);
+	BSP_LCD_SetFont(&Font12);
 }
 
 int16_t DelayLine(int16_t sample , uint8_t delay_type)
 {
 int16_t		out_sample = 0;
+uint16_t	delay_extraction_pointer;
 
-	out_sample = (int16_t )((float )sample * (1.0F - SystemVar.delay_weight)) + ((float )delay_line[SystemVar.delay_extraction_pointer] * SystemVar.delay_weight);
+	delay_extraction_pointer = SystemVar.delay_insertion_pointer - SystemVar.delay*128;
+
+	out_sample = (int16_t )((float )sample * (1.0F - SystemVar.delay_weight)) + ((float )delay_line[delay_extraction_pointer] * SystemVar.delay_weight);
 	if (( SystemVar.delay_type & DELAY_TYPE_FLANGER) == DELAY_TYPE_FLANGER)
 		delay_line[SystemVar.delay_insertion_pointer] = sample;
 	else if (( SystemVar.delay_type & DELAY_TYPE_ECHO) == DELAY_TYPE_ECHO )
 		delay_line[SystemVar.delay_insertion_pointer] = out_sample;
 	else
 		out_sample = sample;
-	SystemVar.delay_extraction_pointer++;
 	SystemVar.delay_insertion_pointer++;
-	SystemVar.delay_extraction_pointer &= (DELAY_LINE_SIZE-1);
-	SystemVar.delay_insertion_pointer  &= (DELAY_LINE_SIZE-1);
 	return out_sample;
 }
 
-void DrawDelay(uint8_t hilight)
+void Delay_Draw(uint8_t hilight)
 {
 uint32_t 	h,t,u;  // hundreds,tens,units
 
@@ -63,9 +80,8 @@ void Delay_IncDec(void)
 {
 	if ( SystemVar.encval > SystemVar.last_encval )
 	{
-		SystemVar.delay--;
-		if ( SystemVar.delay == 0 )
-			SystemVar.delay = 1;
+		if ( SystemVar.delay != 0 )
+			SystemVar.delay--;
 	}
 	else
 	{
@@ -73,5 +89,5 @@ void Delay_IncDec(void)
 		if ( SystemVar.delay > MAX_DELAY )
 			SystemVar.delay = MAX_DELAY;
 	}
-	DrawDelay(1);
+	Delay_Draw(1);
 }

@@ -14,25 +14,25 @@ Menu_TypeDef	MenuTop[] =
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y,
-			"Samples inspection",
+			"Samples",
 			MENU_ACTIVE_COLOR,
 		},
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+MENU_FONT_HEIGHT,
-			"Sequence inspection",
+			"Sequence",
 			MENU_INACTIVE_COLOR,
 		},
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+2*MENU_FONT_HEIGHT,
-			"Echo - Reverb Settings",
+			"Echo - Reverb",
 			MENU_INACTIVE_COLOR,
 		},
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+3*MENU_FONT_HEIGHT,
-			"Global Settings",
+			"Global",
 			MENU_INACTIVE_COLOR,
 		},
 		{
@@ -57,6 +57,12 @@ Menu_TypeDef	MenuSamples[] =
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+2*MENU_FONT_HEIGHT,
+			"USB to Flash Sample Transfer",
+			MENU_INACTIVE_COLOR,
+		},
+		{
+			MENU_LINE_0_X,
+			MENU_LINE_0_Y+4*MENU_FONT_HEIGHT,
 			"Return",
 			MENU_INACTIVE_COLOR,
 		},
@@ -82,6 +88,12 @@ Menu_TypeDef	MenuSequence[] =
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+2*MENU_FONT_HEIGHT,
+			"USB to Flash Sequence Transfer",
+			MENU_INACTIVE_COLOR,
+		},
+		{
+			MENU_LINE_0_X,
+			MENU_LINE_0_Y+3*MENU_FONT_HEIGHT,
 			"Return",
 			MENU_INACTIVE_COLOR,
 		},
@@ -174,7 +186,9 @@ void MenuDisplayMenu(Menu_TypeDef *menu )
 uint8_t	i=0;
 	BSP_LCD_SetTextColor(MENU_DELETE_COLOR);
 	for(i=0;i<=SystemVar.current_menu[0].items;i++)
+	{
 		BSP_LCD_DisplayStringAt(SystemVar.current_menu[i].linex,SystemVar.current_menu[i].liney, SystemVar.current_menu[i].text, LEFT_MODE);
+	}
 	BSP_LCD_SetTextColor(MENU_ACTIVE_COLOR);
 	for(i=0;i<=menu[0].items;i++)
 	{
@@ -278,16 +292,19 @@ void MeuEncoderChangeMenu(void)
 		break;
 	case	MENU_SAMPLES	:
 		if ( SystemVar.next_menu_item == 0 )
-			ReadDescriptorFileFromUSB();
+			ReadDescriptorFileFromUSB(MENU_LINE_0_Y+MENU_FONT_HEIGHT+MenuSamples[0].items*MENU_FONT_HEIGHT);
+		if ( SystemVar.next_menu_item == 2 )
+			QSPI_ParseWavUSB_AndWrite();
 		if ( SystemVar.next_menu_item == MenuSamples[0].items)
 		{
 			SystemVar.menu_state = MENU_TOP;
-			BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-			BSP_LCD_FillRect(0, MENU_LINE_0_Y, 240, 240-24-MENU_LINE_0_Y);
+			ClearDescriptorFileArea(MENU_LINE_0_Y+MenuSamples[0].items*MENU_FONT_HEIGHT);
 			MenuDisplayMenu(MenuTop);
 		}
 		break;
 	case	MENU_SEQUENCE	:
+		if ( SystemVar.next_menu_item == 2 )
+			QSPI_ParseSeqUSB_AndWrite();
 		if ( SystemVar.next_menu_item == MenuSequence[0].items)
 		{
 			SystemVar.menu_state = MENU_TOP;
@@ -299,9 +316,29 @@ void MeuEncoderChangeMenu(void)
 		{
 			SystemVar.system |= SYSTEM_DELAYVAL_INCDEC;
 			SystemVar.system &= ~SYSTEM_MENU_INCDEC;
-			DrawDelay(1);
+			Delay_Draw(1);
 			return;
 		}
+		if ( SystemVar.next_menu_item == 1)
+		{
+			if (( SystemVar.delay_type & DELAY_TYPE_FLANGER) == DELAY_TYPE_FLANGER)
+			{
+				SystemVar.delay_type |= DELAY_TYPE_ECHO;
+				SystemVar.delay_type &= ~DELAY_TYPE_FLANGER;
+			}
+			else if (( SystemVar.delay_type & DELAY_TYPE_ECHO) == DELAY_TYPE_ECHO)
+			{
+				SystemVar.delay_type &= ~DELAY_TYPE_FLANGER;
+				SystemVar.delay_type &= ~DELAY_TYPE_ECHO;
+			}
+			else
+			{
+				SystemVar.delay_type |= DELAY_TYPE_FLANGER;
+			}
+			DelayTypeDisplay();
+			return;
+		}
+
 		if ( SystemVar.next_menu_item == MenuDelay[0].items)
 		{
 			SystemVar.menu_state = MENU_TOP;
@@ -317,21 +354,19 @@ void MeuEncoderChangeMenu(void)
 		}
 		if ( SystemVar.next_menu_item == 0)
 		{
-			SystemVar.system |= SYSTEM_INTERNAL_SEQUENCER;
-			SystemVar.system &= ~SYSTEM_EXTERNAL_SEQUENCER;
+			SystemVar.system |= SYSTEM_INTEXT_SEQUENCER;
 			return;
 		}
 		if ( SystemVar.next_menu_item == 1)
 		{
-			SystemVar.system |= SYSTEM_EXTERNAL_SEQUENCER;
-			SystemVar.system &= ~SYSTEM_INTERNAL_SEQUENCER;
+			SystemVar.system &= ~SYSTEM_INTEXT_SEQUENCER;
 			return;
 		}
 		if ( SystemVar.next_menu_item == 2)
 		{
 			SystemVar.system |= SYSTEM_BPM_INCDEC;
 			SystemVar.system &= ~SYSTEM_MENU_INCDEC;
-			DrawBPM(1);
+			BPM_Draw(1);
 			return;
 		}
 		break;

@@ -14,11 +14,12 @@
 #define	DELAY_TYPE_FLANGER	0
 #define	DELAY_TYPE_REVERB	1
 */
-#define	MAX_DELAY	500
+#define	MAX_DELAY	999
 
 extern	int16_t DelayLine(int16_t sample ,  uint8_t delay_type);
 extern	void DelayLineInit(void);
-extern	void DrawDelay(uint8_t hilight);
+extern	void Delay_Draw(uint8_t hilight);
 extern	void Delay_IncDec(void);
+extern	void DelayTypeDisplay(void);
 
 #endif /* INC_BB101_VCO_COMPONENTS_EFFECTS_DELAY_LINE_H_ */

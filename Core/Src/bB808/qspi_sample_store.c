@@ -7,6 +7,7 @@
 #include "main.h"
 #include "qspi_sample_store.h"
 #include "qspi_sample_manager.h"
+#include "sequencer.h"
 
 #include "fatfs.h"
 
@@ -14,31 +15,14 @@ uint8_t	line[256];
 FIL								WavFile,ConfFile;
 QSPISample_DescriptorTypeDef	QSPISample_Descriptor;
 SampleWAV_FormatTypeDef 		wav_info;
-uint8_t							qspi_buf[SECTOR64K];
+uint8_t							qspi_buf[SECTOR4K];
 
 
 extern	QSPISample_HeaderTypeDef QSPISample_Header[NUM_INSTRUMENT];
 
-
-void print_error(uint32_t type , uint32_t address)
-{
-uint32_t	lcdline=40;
-uint8_t		lcdstring[32];
-
-	BSP_LCD_SetTextColor(LCD_COLOR_RED);
-
-	if ( type == 0 )
-		sprintf((char *)lcdstring,"Error clear @ 0x%08x",(int )address);
-	else
-		sprintf((char *)lcdstring,"Error write @ 0x%08x",(int )address);
-	BSP_LCD_DisplayStringAt(0, lcdline, lcdstring, LEFT_MODE);
-	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-}
-
 uint32_t QSPI_WriteWavFromUSB(uint8_t instrument_number , uint8_t *filename , uint8_t midi_key)
 {
 uint32_t 	bytesread , sector_number=0;
-uint32_t	lcdline=40;
 uint8_t		lcdstring[32];
 uint32_t	instrument_address;
 
@@ -50,12 +34,12 @@ uint32_t	instrument_address;
 			QSPISample_Header[instrument_number].midi_key = midi_key;
 			QSPISample_Header[instrument_number].wav_len = wav_info.FileSize;
 			QSPISample_Header[instrument_number].sample_rate = wav_info.SampleRate;
-			sprintf((char *)lcdstring,"%d %d 0x%02x %s",
+			sprintf((char *)lcdstring,"%d 0x%02x %s",
 					instrument_number,
-							(int )  QSPISample_Header[instrument_number].sample_rate,
 							(int )  QSPISample_Header[instrument_number].midi_key,
 							(char *)QSPISample_Header[instrument_number].wav_name);
-			BSP_LCD_DisplayStringAt(0, lcdline, lcdstring, LEFT_MODE);
+			BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
+			BSP_LCD_DisplayStringAt(0, STORE_MSG_LINE, lcdstring, LEFT_MODE);
 
 			for(sector_number=0;sector_number < NUMSECTOR4K_PER_INSTRUMENT;sector_number++)
 			{
@@ -74,12 +58,8 @@ uint32_t	instrument_address;
 				if ( bytesread != 0 )
 				{
 					instrument_address = (instrument_number * INSTRUMENT_SIZE) + (sector_number * SECTOR4K);
-					__disable_irq();
-					if ( BSP_QSPI_Erase_4kSector(instrument_address) != 0 )
-						print_error(0,instrument_address);
-					if ( BSP_QSPI_Write(qspi_buf, instrument_address, bytesread) )
-						print_error(1,instrument_address);
-					__enable_irq();
+					BSP_QSPI_Erase_4kSector(instrument_address);
+					BSP_QSPI_Write(qspi_buf, instrument_address, bytesread);
 				}
 				HAL_Delay(1);
 			}
@@ -113,17 +93,16 @@ uint32_t	lcdline=90;
 	}
 }
 
-void QSPI_ReadDescriptorFileFromUSB(void)
+void QSPI_ParseWavUSB_AndWrite(void)
 {
 uint32_t	i;
 int			instrument_number,midi_key;
-uint8_t 	filename[32],len;
+uint8_t 	filename[32],len , lcdline[64];
 
-	BSP_QSPI_Init();
-	if(f_open(&ConfFile, "bB808.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)
+	if(f_open(&ConfFile, "bb_sam.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)
 	{
-		BSP_LCD_DisplayStringAt(0, 30, (uint8_t *)"Found bB808.txt, writing flash", LEFT_MODE);
-
+		BSP_LCD_SetTextColor(LCD_COLOR_RED);
+		BSP_LCD_DisplayStringAt(0, STORE_MSG_MESSAGE, (uint8_t *)"Writing FLASH", CENTER_MODE);
 		for(i=0;i<NUM_INSTRUMENT;i++)
 		{
 			f_gets((char * )line,256,&ConfFile);
@@ -132,11 +111,65 @@ uint8_t 	filename[32],len;
 				if ( sscanf((char * )line,"%d %s %d",&instrument_number,filename,&midi_key) == 3 )
 				{
 					if ( QSPI_WriteWavFromUSB(instrument_number,filename,midi_key) != 0 )
-						return;
+					{
+						sprintf((char *)lcdline,"Error reading %s",filename);
+						BSP_LCD_DisplayStringAt(0, STORE_MSG_ERRORLINE,lcdline, LEFT_MODE);
+					}
+					else
+						BSP_LCD_DisplayStringAt(0, STORE_MSG_LINE,(uint8_t *) "                           ", LEFT_MODE);
 				}
 			}
 		}
 		f_close(&ConfFile);
 	}
+	BSP_LCD_DisplayStringAt(0, STORE_MSG_MESSAGE,(uint8_t *) "             ", CENTER_MODE);
+	BSP_LCD_DisplayStringAt(0, STORE_MSG_LINE,(uint8_t *) "                           ", LEFT_MODE);
 }
 
+void QSPI_ParseSeqUSB_AndWrite(void)
+{
+uint32_t	i,j,seq_header = 0,val,line_idx=0,sequencer_length;
+uint8_t 	len;
+int		 	seq[14];
+
+	if(f_open(&ConfFile, "bb_seq.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)
+	{
+		BSP_LCD_DisplayStringAt(0, STORE_MSG_MESSAGE,(uint8_t *) "Reading sequence", CENTER_MODE);
+		SystemVar.sequencer_length = SEQUENCER_MAX_SIZE;
+		for(i=0;i<SEQUENCER_MAX_SIZE;i++)
+		{
+			if ( i  > SystemVar.sequencer_length )
+				break;
+			f_gets((char * )line,256,&ConfFile);
+			if ( (len = strlen((char * )line)) != 0 )
+			{
+				if ( seq_header == 0 )
+				{
+					if ( sscanf((char * )line,"LOOPLEN %d",(int *)&sequencer_length) == 1 )
+					{
+						seq_header = line_idx = 1;
+						sequencer_steps[0] = sequencer_length;
+					}
+				}
+				else
+				{
+					if ( sscanf((char * )line,"%d %d %d %d %d %d %d %d %d %d %d %d %d %d",&seq[0],&seq[1],&seq[2],&seq[3],&seq[4],&seq[5],&seq[6],&seq[7],&seq[8],&seq[9],&seq[10],&seq[11],&seq[12],&seq[13]) == 14 )
+					{
+						val = 0;
+						for(j=0;j<14;j++)
+						{
+							if ( seq[j] != 0 )
+								val |= 1 << j;
+						}
+						sequencer_steps[line_idx] = val;
+						line_idx++;
+					}
+				}
+			}
+		}
+		SystemVar.sequencer_length = sequencer_length;
+		f_close(&ConfFile);
+	}
+	BSP_LCD_DisplayStringAt(0, STORE_MSG_MESSAGE,(uint8_t *)"                           ", CENTER_MODE);
+	BSP_LCD_DisplayStringAt(0, STORE_MSG_LINE,(uint8_t *) "                           ", LEFT_MODE);
+}

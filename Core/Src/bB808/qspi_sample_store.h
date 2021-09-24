@@ -8,6 +8,10 @@
 #ifndef SRC_BB808_QSPI_SAMPLE_STORE_H_
 #define SRC_BB808_QSPI_SAMPLE_STORE_H_
 
+#define	STORE_MSG_MESSAGE	120
+#define	STORE_MSG_LINE		140
+#define	STORE_MSG_ERRORLINE	160
+
 typedef struct {
 	uint32_t	qspi_ptr[NUM_INSTRUMENT];
 	uint32_t	sample_len[NUM_INSTRUMENT];
@@ -35,5 +39,7 @@ typedef struct {
   uint32_t SubChunk2Size; /* 40 */
 }SampleWAV_FormatTypeDef;
 
+extern	void QSPI_ParseWavUSB_AndWrite(void);
+extern	void QSPI_ParseSeqUSB_AndWrite(void);
 
 #endif /* SRC_BB808_QSPI_SAMPLE_STORE_H_ */

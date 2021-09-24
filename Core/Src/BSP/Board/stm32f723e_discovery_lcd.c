@@ -350,8 +350,11 @@ void BSP_LCD_ClearStringLine(uint16_t Line)
   */
 void BSP_LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
 {
+	__disable_irq();
   DrawChar(Xpos, Ypos, &DrawProp.pFont->table[(Ascii-' ') *\
     DrawProp.pFont->Height * ((DrawProp.pFont->Width + 7) / 8)]);
+	__enable_irq();
+
 }
 
 /**

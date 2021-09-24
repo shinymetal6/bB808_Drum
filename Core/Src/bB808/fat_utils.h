@@ -12,6 +12,6 @@
 extern	void ReadDescriptorFileFromUSB(void);
 extern	FRESULT Explore_Disk(char *path);
 extern	void ReadDescriptorFileFromUSB(void);
-
+extern	void ClearDescriptorFileArea(uint8_t line_from);
 
 #endif /* SRC_BB808_FAT_UTILS_H_ */

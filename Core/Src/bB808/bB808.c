@@ -15,12 +15,23 @@
 SystemVar_TypeDef	SystemVar;
 extern	TIM_HandleTypeDef htim2;
 extern	TIM_HandleTypeDef htim6;
+extern	TIM_HandleTypeDef htim7;
 
 void tim50msec_callback(void)
 {
-	SystemVar.tim50msec_flag = 1;
-	SystemVar.tim100msec_flag ++;
-	SystemVar.tim100msec_flag &= 1;
+	SystemVar.timers_flag |= TIMER_50MS_FLAG;
+	SystemVar.tim100msec_counter++;
+	if ( SystemVar.tim100msec_counter > 1 )
+	{
+		SystemVar.tim100msec_counter = 0;
+		SystemVar.timers_flag |= TIMER_100MS_FLAG;
+		SystemVar.tim1Sec_counter++;
+		if ( SystemVar.tim1Sec_counter > 9 )
+		{
+			SystemVar.tim1Sec_counter = 0;
+			SystemVar.timers_flag |= TIMER_1SEC_FLAG;
+		}
+	}
 }
 
 void InitLCD(char *title)
@@ -34,39 +45,38 @@ void InitLCD(char *title)
 	  BSP_LCD_SetFont(&Font12);
 }
 
+static void InitialSetup(void)
+{
+	SystemVar.beat = 120;
+	SystemVar.system = SYSTEM_MENU_INCDEC;
+}
+
 void bB808_Init(void)
 {
 	HAL_GPIO_WritePin(USB_OTGHS_PPWR_EN_GPIO_Port, USB_OTGHS_PPWR_EN_Pin, GPIO_PIN_SET);
 	InitLCD("bB808");
+	InitialSetup();
 	MenuDisplayInit();
-	SystemVar.audio_init_flag = 0;
-	HAL_TIM_Encoder_Start_IT(&htim2, TIM_CHANNEL_ALL);
-	HAL_TIM_Base_Start_IT(&htim6);
-	SystemVar.beat = 120;
-	SystemVar.system = SYSTEM_MENU_INCDEC;
-	DrawBPM(0);
-	DrawDelay(0);
-	DrawBPM_Icon();
+	SequencerInit();
 	DelayLineInit();
+	BPM_Init();
+	BPM_Draw(0);
+	Delay_Draw(0);
+	DelayTypeDisplay();
 	QSPISamplePlayerInit();
+	HAL_TIM_Encoder_Start_IT(&htim2, TIM_CHANNEL_ALL);
+	HAL_TIM_Base_Start_IT(&htim6);	/* tim @ 50 mSec */
+	HAL_TIM_Base_Start_IT(&htim7);	/* sequencer @ 10 mSec */
 	QSPISamplePlayerStart();
 }
 
 void bB808_Loop(void)
 {
-	if ( SystemVar.tim50msec_flag == 1)
+	if (( SystemVar.timers_flag & TIMER_50MS_FLAG ) == TIMER_50MS_FLAG)
 	{
-		SystemVar.tim50msec_flag = 0;
-		SystemVar.DrawBitIndicator_counter++;
-		if (SystemVar.DrawBitIndicator_counter > 5 )
-			DrawBitIndicator(1);
-		else
-			DrawBitIndicator(0);
-		if (SystemVar.DrawBitIndicator_counter > 9 )
-			SystemVar.DrawBitIndicator_counter = 0;
+		SystemVar.timers_flag &= ~TIMER_50MS_FLAG;
 		if ( SystemVar.encoder_flag == 1 )
 		{
-			__disable_irq();
 			if (( SystemVar.system & SYSTEM_MENU_INCDEC) == SYSTEM_MENU_INCDEC)
 				MenuEncoderNavigate();
 			else
@@ -76,7 +86,6 @@ void bB808_Loop(void)
 				if (( SystemVar.system & SYSTEM_DELAYVAL_INCDEC) == SYSTEM_DELAYVAL_INCDEC)
 					Delay_IncDec();
 			}
-			__enable_irq();
 			SystemVar.encoder_flag = 0;
 		}
 		if ( SystemVar.sw_disable == 1 )
@@ -88,7 +97,6 @@ void bB808_Loop(void)
 		{
 			if ( HAL_GPIO_ReadPin(ENCODER_SW_GPIO_Port, ENCODER_SW_Pin) == 0 )
 			{
-				__disable_irq();
 				if (( SystemVar.system & SYSTEM_MENU_INCDEC) == SYSTEM_MENU_INCDEC)
 					MeuEncoderChangeMenu();
 				else
@@ -97,24 +105,20 @@ void bB808_Loop(void)
 					{
 						SystemVar.system &= ~SYSTEM_BPM_INCDEC;
 						SystemVar.system |= SYSTEM_MENU_INCDEC;
-						DrawBPM(0);
+						BPM_Draw(0);
 					}
 					if (( SystemVar.system & SYSTEM_DELAYVAL_INCDEC) == SYSTEM_DELAYVAL_INCDEC)
 					{
 						SystemVar.system &= ~SYSTEM_DELAYVAL_INCDEC;
 						SystemVar.system |= SYSTEM_MENU_INCDEC;
-						DrawDelay(0);
+						Delay_Draw(0);
 					}
 				}
-				__enable_irq();
 				SystemVar.sw_disable = 1;
 			}
 		}
 	}
-	if ( SystemVar.tim100msec_flag == 1)
-	{
-		SystemVar.tim100msec_flag = 0;
-	}
+
 	if ( (SystemVar.system & SYSTEM_MIDIDEV_FLAG ) == SYSTEM_MIDIDEV_FLAG )
 	{
 		QSPI_Process_MIDI();
@@ -132,7 +136,7 @@ void MSC_Application(uint8_t from)
 {
 	if(f_mount(&USBDISKFatFs, (TCHAR const*)USBDISKPath, 0) != FR_OK)
 		return;
-	SystemVar.usbdisk_ready = 1;
+	SystemVar.system |= SYSTEM_USB_INIT;
 	BSP_LCD_DrawBitmap(MENU_USBKEY_ICON_X, MENU_USBKEY_ICON_Y, (uint8_t *)usbdrive);
 }
 
@@ -145,11 +149,11 @@ void USB_CallFromHS(USBH_HandleTypeDef *phost, uint8_t id)
 void USB_DisconnectFromHS(USBH_HandleTypeDef *phost, uint8_t id)
 {
 
-	if ( SystemVar.usbdisk_ready == 1)
+	if (( SystemVar.system & SYSTEM_USB_INIT) == SYSTEM_USB_INIT)
 	{
 		BSP_LCD_SetTextColor(MENU_DELETE_COLOR);
 		BSP_LCD_FillRect(MENU_USBKEY_ICON_X, MENU_USBKEY_ICON_Y, MENU_USBKEY_ICON_W, MENU_USBKEY_ICON_H);
-		SystemVar.usbdisk_ready = 0;
+		SystemVar.system &= ~SYSTEM_USB_INIT;
 	}
 }
 

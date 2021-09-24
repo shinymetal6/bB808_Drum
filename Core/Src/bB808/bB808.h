@@ -9,16 +9,21 @@
 #define SRC_BB808_BB808_H_
 
 #include "main.h"
-#include "qspi_sample_manager.h"
 #include "delay_line.h"
 #include "menus.h"
-#include "beat_indicator.h"
 #include "usb_sample_mngr.h"
+#include "qspi_sample_manager.h"
+#include "qspi_sample_store.h"
+#include "sequencer.h"
+#include "bpm.h"
 
 typedef struct {
 	uint8_t			system;
-	uint8_t			audio_init_flag;
-	uint8_t			usbdisk_ready;
+	uint8_t			sequencer;
+	uint32_t		sequencer_counter;
+	uint32_t		sequencer_preload;
+	uint16_t		sequencer_length;
+	uint16_t		sequencer_step;
 	uint8_t			menu_state;
 	uint8_t			next_menu_item;
 	uint8_t			selected_menu_item;
@@ -27,26 +32,37 @@ typedef struct {
 	uint32_t		last_encval;
 	uint8_t 		encoder_flag;
 	uint8_t 		sw_disable;
-	uint8_t			tim50msec_flag;
-	uint8_t			tim100msec_flag;
+	uint8_t			timers_flag;
+	uint8_t			tim100msec_counter;
+	uint8_t			tim1Sec_counter;
 	uint8_t			DrawBitIndicator_counter;
 	uint16_t		beat;
 	uint16_t		delay;
 	uint8_t			delay_type;
-	uint32_t		delay_insertion_pointer;
-	uint32_t		delay_extraction_pointer;
+	uint16_t		delay_insertion_pointer;
 	float			delay_weight;
 
 }SystemVar_TypeDef;
 
 /* system flag */
-#define	SYSTEM_INTERNAL_SEQUENCER	0x01
-#define	SYSTEM_EXTERNAL_SEQUENCER	0x02
-#define	SYSTEM_BPM_INCDEC			0x04
-#define	SYSTEM_DELAYVAL_INCDEC		0x08
-#define	SYSTEM_DELAYTYPE_INCDEC		0x10
-#define	SYSTEM_MENU_INCDEC			0x40
+/* SYSTEM_INTEXT_SEQUENCER = 0 : external sequencer */
+#define	SYSTEM_INTEXT_SEQUENCER		0x01
+#define	SYSTEM_BPM_INCDEC			0x02
+#define	SYSTEM_DELAYVAL_INCDEC		0x04
+#define	SYSTEM_DELAYTYPE_INCDEC		0x08
+#define	SYSTEM_MENU_INCDEC			0x10
+#define	SYSTEM_USB_INIT				0x20
+#define	SYSTEM_AUDIO_INIT			0x40
 #define	SYSTEM_MIDIDEV_FLAG			0x80
+
+/* sequencer flags */
+#define	SEQUENCER_IRQ_FLAG			0x80
+#define	SEQUENCER_TICK				0x01
+
+/* timers_flag */
+#define	TIMER_50MS_FLAG				0x01
+#define	TIMER_100MS_FLAG			0x02
+#define	TIMER_1SEC_FLAG				0x04
 
 /* delay_type */
 #define	DELAY_TYPE_ECHO			0x01
@@ -62,7 +78,9 @@ extern	const uint8_t digits[10][1578];
 
 extern	void bB808_Init(void);
 extern	void bB808_Loop(void);
-extern	void ReadDescriptorFileFromUSB(void);
+extern	void ReadDescriptorFileFromUSB(uint8_t line_idx);
+extern	void ClearDescriptorFileArea(uint8_t line_from);
+extern	void tim50msec_callback(void);
 
 extern const uint8_t green_digits[10][1578];
 extern const uint8_t red_digits[10][1578];
