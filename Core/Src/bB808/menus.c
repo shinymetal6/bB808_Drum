@@ -62,7 +62,7 @@ Menu_TypeDef	MenuSamples[] =
 		},
 		{
 			MENU_LINE_0_X,
-			MENU_LINE_0_Y+4*MENU_FONT_HEIGHT,
+			MENU_LINE_0_Y+3*MENU_FONT_HEIGHT,
 			"Return",
 			MENU_INACTIVE_COLOR,
 		},
@@ -150,6 +150,12 @@ Menu_TypeDef	MenuSettings[] =
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+3*MENU_FONT_HEIGHT,
+			"Clear FLASH",
+			MENU_INACTIVE_COLOR,
+		},
+		{
+			MENU_LINE_0_X,
+			MENU_LINE_0_Y+4*MENU_FONT_HEIGHT,
 			"Return",
 			MENU_INACTIVE_COLOR,
 		},
@@ -368,6 +374,10 @@ void MeuEncoderChangeMenu(void)
 			SystemVar.system &= ~SYSTEM_MENU_INCDEC;
 			BPM_Draw(1);
 			return;
+		}
+		if ( SystemVar.next_menu_item == 3)
+		{
+			BSP_QSPI_Erase_Chip();
 		}
 		break;
 	}
