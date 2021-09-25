@@ -20,24 +20,29 @@
 #define	MENU_USBKEY_ICON_W		24
 #define	MENU_USBKEY_ICON_H		24
 #define	MENU_USBKEY_ICON_X		(LCD_RESOLUTION_X-MENU_USBKEY_ICON_W)
-#define	MENU_USBKEY_ICON_Y		(LCD_RESOLUTION_Y-MENU_USBKEY_ICON_H)
+#define	MENU_USBKEY_ICON_Y		(2)
 
-#define	BPM_DIGIT_XPOSU			(MENU_USBKEY_ICON_X-DIGIT_W-4)
+#define DIGIT_X    20
+#define DIGIT_Y    36
+
+#define	BPM_DIGIT_XPOSU			(LCD_RESOLUTION_X-DIGIT_X)
 #define	BPM_DIGIT_XPOST			(BPM_DIGIT_XPOSU-DIGIT_W-1)
 #define	BPM_DIGIT_XPOSH			(BPM_DIGIT_XPOST-DIGIT_W-1)
-#define	BPM_DIGIT_YPOS			(LCD_RESOLUTION_Y-DIGIT_H)
+#define	BPM_DIGIT_YPOS			(MENU_USBKEY_ICON_Y+MENU_USBKEY_ICON_H+4)
 
 #define	BPM_TEXT_X				(BPM_DIGIT_XPOSH - 36 )
-#define	BPM_TEXT_Y				(LCD_RESOLUTION_Y-24)
+#define	BPM_TEXT_Y				(BPM_DIGIT_YPOS+(DIGIT_Y / 2))
 
-#define	DLY_DIGIT_XPOSU			(BPM_DIGIT_XPOSH-DIGIT_W-40)
+#define	DLY_DIGIT_XPOSU			(LCD_RESOLUTION_X-DIGIT_X)
 #define	DLY_DIGIT_XPOST			(DLY_DIGIT_XPOSU-DIGIT_W-1)
 #define	DLY_DIGIT_XPOSH			(DLY_DIGIT_XPOST-DIGIT_W-1)
-#define	DLY_DIGIT_YPOS			(LCD_RESOLUTION_Y-DIGIT_H)
+#define	DLY_DIGIT_YPOS			(BPM_DIGIT_YPOS+DIGIT_Y+2)
 
 #define	DLY_TEXT_X				(DLY_DIGIT_XPOSH - 46 )
-#define	DLY_TEXT_Y				(LCD_RESOLUTION_Y-24)
+#define	DLY_TEXT_Y				(DLY_DIGIT_YPOS+(DIGIT_Y / 2))
 
+#define	DESCRIPTOR_AREA_X		0
+#define	DESCRIPTOR_AREA_Y		DLY_DIGIT_YPOS+DIGIT_Y
 
 typedef struct {
 	uint8_t			linex,liney;
@@ -58,8 +63,6 @@ typedef enum
 	  MENU_SETTINGS
 }MenuState_Typdef;
 
-extern	uint32_t 	encoder_flag;
-extern	void   encoder_callback(void);
 extern	void MenuDisplayInit(void);
 extern	void MenuEncoderNavigate(void);
 extern	void MeuEncoderChangeMenu(void);

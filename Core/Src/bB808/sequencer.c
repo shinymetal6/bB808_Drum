@@ -12,8 +12,6 @@ __attribute__ ((aligned (16)))  uint16_t sequencer_steps[SEQUENCER_MAX_SIZE];
 extern	Instrument_TypeDef  Instrument;
 uint32_t	bpm2irq[MAX_BEAT];
 
-
-
 void SequencerInit(void)
 {
 	BSP_QSPI_Read((uint8_t *)sequencer_steps, QSPI_SEQUENCER_ADDRESS, SEQUENCER_MAX_SIZE);
@@ -34,7 +32,6 @@ void Sequencer(void)
 uint16_t	i , val;
 	if ( (SystemVar.system & SYSTEM_INTEXT_SEQUENCER ) == SYSTEM_INTEXT_SEQUENCER )
 	{
-		//SystemVar.sequencer_preload = bpm2irq[SystemVar.beat];
 		SystemVar.sequencer_counter++;
 		if ( SystemVar.sequencer_counter >= SystemVar.sequencer_preload )
 		{

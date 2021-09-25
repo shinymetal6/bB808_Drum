@@ -17,21 +17,30 @@ extern	TIM_HandleTypeDef htim2;
 extern	TIM_HandleTypeDef htim6;
 extern	TIM_HandleTypeDef htim7;
 
-void tim50msec_callback(void)
+void tim100msec_callback(void)
 {
-	SystemVar.timers_flag |= TIMER_50MS_FLAG;
+	SystemVar.timers_flag |= TIMER_100MS_FLAG;
 	SystemVar.tim100msec_counter++;
-	if ( SystemVar.tim100msec_counter > 1 )
+	SystemVar.tim1Sec_counter++;
+	if ( SystemVar.tim1Sec_counter > 9 )
 	{
-		SystemVar.tim100msec_counter = 0;
-		SystemVar.timers_flag |= TIMER_100MS_FLAG;
-		SystemVar.tim1Sec_counter++;
-		if ( SystemVar.tim1Sec_counter > 9 )
-		{
-			SystemVar.tim1Sec_counter = 0;
-			SystemVar.timers_flag |= TIMER_1SEC_FLAG;
-		}
+		SystemVar.tim1Sec_counter = 0;
+		SystemVar.timers_flag |= TIMER_1SEC_FLAG;
 	}
+}
+
+void encoder_rotation_callback(void)
+{
+	SystemVar.last_encval = SystemVar.encval;
+	SystemVar.encval = TIM2->CNT;
+	if ( SystemVar.last_encval != SystemVar.encval)
+		SystemVar.encoder_flag |= ENCODER_ROTATION_FLAG;
+}
+
+void encoder_sw_callback(void)
+{
+	if ( HAL_GPIO_ReadPin(ENCODER_SW_GPIO_Port, ENCODER_SW_Pin) == 0 )
+		SystemVar.encoder_flag |= ENCODER_SW_FLAG;
 }
 
 void InitLCD(char *title)
@@ -72,10 +81,10 @@ void bB808_Init(void)
 
 void bB808_Loop(void)
 {
-	if (( SystemVar.timers_flag & TIMER_50MS_FLAG ) == TIMER_50MS_FLAG)
+	if (( SystemVar.timers_flag & TIMER_100MS_FLAG ) == TIMER_100MS_FLAG)
 	{
-		SystemVar.timers_flag &= ~TIMER_50MS_FLAG;
-		if ( SystemVar.encoder_flag == 1 )
+		SystemVar.timers_flag &= ~TIMER_100MS_FLAG;
+		if (( SystemVar.encoder_flag & ENCODER_ROTATION_FLAG) == ENCODER_ROTATION_FLAG)
 		{
 			if (( SystemVar.system & SYSTEM_MENU_INCDEC) == SYSTEM_MENU_INCDEC)
 				MenuEncoderNavigate();
@@ -86,14 +95,9 @@ void bB808_Loop(void)
 				if (( SystemVar.system & SYSTEM_DELAYVAL_INCDEC) == SYSTEM_DELAYVAL_INCDEC)
 					Delay_IncDec();
 			}
-			SystemVar.encoder_flag = 0;
+			SystemVar.encoder_flag &= ~ENCODER_ROTATION_FLAG;
 		}
-		if ( SystemVar.sw_disable == 1 )
-		{
-			if ( HAL_GPIO_ReadPin(ENCODER_SW_GPIO_Port, ENCODER_SW_Pin) == 1 )
-				SystemVar.sw_disable = 0;
-		}
-		else
+		if (( SystemVar.encoder_flag & ENCODER_SW_FLAG) == 0)
 		{
 			if ( HAL_GPIO_ReadPin(ENCODER_SW_GPIO_Port, ENCODER_SW_Pin) == 0 )
 			{
@@ -114,8 +118,13 @@ void bB808_Loop(void)
 						Delay_Draw(0);
 					}
 				}
-				SystemVar.sw_disable = 1;
+				SystemVar.encoder_flag |= ENCODER_SW_FLAG;
 			}
+		}
+		else
+		{
+			if ( HAL_GPIO_ReadPin(ENCODER_SW_GPIO_Port, ENCODER_SW_Pin) == 1 )
+				SystemVar.encoder_flag &= ~ENCODER_SW_FLAG;
 		}
 	}
 

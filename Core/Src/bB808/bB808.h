@@ -31,7 +31,6 @@ typedef struct {
 	uint32_t 		encval;
 	uint32_t		last_encval;
 	uint8_t 		encoder_flag;
-	uint8_t 		sw_disable;
 	uint8_t			timers_flag;
 	uint8_t			tim100msec_counter;
 	uint8_t			tim1Sec_counter;
@@ -60,9 +59,12 @@ typedef struct {
 #define	SEQUENCER_TICK				0x01
 
 /* timers_flag */
-#define	TIMER_50MS_FLAG				0x01
-#define	TIMER_100MS_FLAG			0x02
-#define	TIMER_1SEC_FLAG				0x04
+#define	TIMER_100MS_FLAG			0x01
+#define	TIMER_1SEC_FLAG				0x02
+
+/* encoder_flag */
+#define	ENCODER_ROTATION_FLAG		0x01
+#define	ENCODER_SW_FLAG				0x02
 
 /* delay_type */
 #define	DELAY_TYPE_ECHO			0x01
@@ -79,8 +81,10 @@ extern	const uint8_t digits[10][1578];
 extern	void bB808_Init(void);
 extern	void bB808_Loop(void);
 extern	void ReadDescriptorFileFromUSB(uint8_t line_idx);
-extern	void ClearDescriptorFileArea(uint8_t line_from);
-extern	void tim50msec_callback(void);
+extern	void ClearDescriptorFileArea(uint8_t x , uint8_t y);
+extern	void tim100msec_callback(void);
+extern	void encoder_rotation_callback(void);
+extern	void encoder_sw_callback(void);
 
 extern const uint8_t green_digits[10][1578];
 extern const uint8_t red_digits[10][1578];

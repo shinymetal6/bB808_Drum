@@ -45,19 +45,19 @@ Menu_TypeDef	MenuSamples[] =
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y,
-			"View Samples on USB key",
+			"Samples on USB",
 			MENU_ACTIVE_COLOR,
 		},
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+MENU_FONT_HEIGHT,
-			"View Samples on internal FLASH",
+			"Samples on FLASH",
 			MENU_INACTIVE_COLOR,
 		},
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+2*MENU_FONT_HEIGHT,
-			"USB to Flash Sample Transfer",
+			"USB to Flash",
 			MENU_INACTIVE_COLOR,
 		},
 		{
@@ -76,19 +76,19 @@ Menu_TypeDef	MenuSequence[] =
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y,
-			"View Sequence on USB key",
+			"Sequence on USB",
 			MENU_ACTIVE_COLOR,
 		},
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+MENU_FONT_HEIGHT,
-			"View Sequence on internal FLASH",
+			"Sequence on FLASH",
 			MENU_INACTIVE_COLOR,
 		},
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+2*MENU_FONT_HEIGHT,
-			"USB to Flash Sequence Transfer",
+			"USB to Flash",
 			MENU_INACTIVE_COLOR,
 		},
 		{
@@ -132,13 +132,13 @@ Menu_TypeDef	MenuSettings[] =
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y,
-			"Internal Loop Mode",
+			"Int Loop Mode",
 			MENU_ACTIVE_COLOR,
 		},
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+MENU_FONT_HEIGHT,
-			"External Sequencer mode",
+			"Ext Sequencer mode",
 			MENU_INACTIVE_COLOR,
 		},
 		{
@@ -164,12 +164,6 @@ Menu_TypeDef	MenuSettings[] =
 		},
 };
 
-void   encoder_callback(void)
-{
-	SystemVar.last_encval = SystemVar.encval;
-	SystemVar.encoder_flag = 1;
-	SystemVar.encval = TIM2->CNT;
-}
 
 void MenuHilightItem(Menu_TypeDef *menu)
 {
@@ -304,7 +298,7 @@ void MeuEncoderChangeMenu(void)
 		if ( SystemVar.next_menu_item == MenuSamples[0].items)
 		{
 			SystemVar.menu_state = MENU_TOP;
-			ClearDescriptorFileArea(MENU_LINE_0_Y+MenuSamples[0].items*MENU_FONT_HEIGHT);
+			ClearDescriptorFileArea(DESCRIPTOR_AREA_X , DESCRIPTOR_AREA_Y);
 			MenuDisplayMenu(MenuTop);
 		}
 		break;
