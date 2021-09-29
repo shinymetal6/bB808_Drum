@@ -181,125 +181,14 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
-  //HAL_GPIO_WritePin(USB_OTGFS_PPWR_EN_GPIO_Port, USB_OTGFS_PPWR_EN_Pin, GPIO_PIN_RESET);
   bB808_Init();
-#define	FINALMAIN
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-#ifndef FINALMAIN
-		if ( usbdisk_ready == 1 )
-		{
-			if ( audio_init_flag == 0 )
-			{
-#ifdef WAVPLAYER
-				//PlayerInit();
-				//AUDIO_PLAYER_Init();
-				AUDIO_PLAYER_Start("sample7.wav");
-#endif
-#ifdef USBSAMPLEPLAYER
-				SamplePlayerStart("sample.wav");
-#endif
-#ifdef SINEPLAYER
-				InitSinePlay();
-#endif
-#ifdef QSPISAMPLEPLAYER
-				//QSPI_ReadDescriptorFileFromUSB();
-				DelayLineInit();
-				QSPISamplePlayerInit();
-				QSPISamplePlayerStart();
-				QSPIInstrumentDelayControlMessage();
-				QSPIInstrumentDelayWeightControlMessage();
-				QSPIInstrumentDelayTypeControlMessage();
-#endif
-				audio_init_flag = 1;
-			}
-		}
-#ifdef WAVPLAYER
-		if ( audio_init_flag == 1 )
-		{
-			//AUDIO_PLAYER_Process();
-		}
-#endif
-#ifdef SINEPLAYER
-		if ( audio_init_flag == 1 )
-		{
-			SinePlay_Process();
-		}
-#endif
-
-#ifdef QSPISAMPLEPLAYER
-		extern	uint8_t		control_message, program_message;
-
-		if ( audio_init_flag == 1 )
-		{
-			if ( mididev_flag == 1 )
-			{
-				mididev_flag = 0;
-				QSPIRestartMIDI();
-				switch(control_message)
-				{
-				case	1	:	QSPIInstrumentDelayControlMessage(); break;
-				case	2	:	QSPIInstrumentDelayWeightControlMessage();break;
-				default 	:	control_message = 0;
-				}
-				if(program_message == 1)
-					QSPIInstrumentDelayTypeControlMessage();
-			}
-		}
-		uint8_t sh;
-		if ( tim50msec_flag == 1)
-		{
-			tim50msec_flag = 0;
-			sh++;
-			if (sh > 5 )
-				DrawBitIndicator(1);
-			else
-				DrawBitIndicator(0);
-			if (sh > 9 )
-				sh = 0;
-		}
-		if ( tim100msec_flag == 1)
-		{
-			tim100msec_flag = 0;
-		}
-#endif
-#else
-#ifdef ENABLE_AUDIO
-		if ( audio_init_flag == 0 )
-		{
-			DelayLineInit();
-			QSPISamplePlayerInit();
-			QSPISamplePlayerStart();
-			QSPIInstrumentDelayControlMessage();
-			QSPIInstrumentDelayWeightControlMessage();
-			QSPIInstrumentDelayTypeControlMessage();
-			audio_init_flag = 1;
-		}
-		extern	uint8_t		control_message, program_message;
-
-		if ( audio_init_flag == 1 )
-		{
-			if ( mididev_flag == 1 )
-			{
-				mididev_flag = 0;
-				QSPIRestartMIDI();
-				switch(control_message)
-				{
-				case	1	:	QSPIInstrumentDelayControlMessage(); break;
-				case	2	:	QSPIInstrumentDelayWeightControlMessage();break;
-				default 	:	control_message = 0;
-				}
-				if(program_message == 1)
-					QSPIInstrumentDelayTypeControlMessage();
-			}
-		}
-#endif
 		bB808_Loop();
-		#endif
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
@@ -1038,9 +927,9 @@ static void MX_TIM7_Init(void)
 
   /* USER CODE END TIM7_Init 1 */
   htim7.Instance = TIM7;
-  htim7.Init.Prescaler = 5400;
+  htim7.Init.Prescaler = 2700;
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 50;
+  htim7.Init.Period = 20040;
   htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
   {
@@ -1520,7 +1409,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : ENCODER_SW_Pin */
   GPIO_InitStruct.Pin = ENCODER_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(ENCODER_SW_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : USB_OTG_HS_ID_Pin SYS_LD_USER2_Pin */

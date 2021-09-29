@@ -1,0 +1,14 @@
+0 ClHat.wav 36
+1 Kick.wav 37
+2 Snare.wav 38
+3 Cymbal1.wav 39
+4 Cymbal2.wav 40
+5  Tom01.wav 41
+6  Tom02.wav 42
+7  Tom03.wav 43
+8  Tom04.wav 44
+9  Tom05.wav 45
+10 Tom06.wav 46
+11 Tom07.wav 47
+12 Tom08.wav 48
+

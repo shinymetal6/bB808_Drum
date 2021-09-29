@@ -17,6 +17,9 @@ extern	TIM_HandleTypeDef htim2;
 extern	TIM_HandleTypeDef htim6;
 extern	TIM_HandleTypeDef htim7;
 
+extern	const uint8_t usbdrive_not_present[];
+extern	const uint8_t usbdrive_present[];
+
 void tim100msec_callback(void)
 {
 	SystemVar.timers_flag |= TIMER_100MS_FLAG;
@@ -43,15 +46,18 @@ void encoder_sw_callback(void)
 		SystemVar.encoder_flag |= ENCODER_SW_FLAG;
 }
 
+
+
 void InitLCD(char *title)
 {
-	  BSP_LCD_Init();
-	  BSP_LCD_Clear(LCD_COLOR_BLACK);
-	  BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-	  BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-	  BSP_LCD_SetFont(&Font24);
-	  BSP_LCD_DisplayStringAt(16, 1, (uint8_t *)title, LEFT_MODE);
-	  BSP_LCD_SetFont(&Font12);
+	BSP_LCD_Init();
+	BSP_LCD_Clear(LCD_COLOR_BLACK);
+	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+	BSP_LCD_SetFont(&Font24);
+	BSP_LCD_DisplayStringAt(16, 1, (uint8_t *)title, LEFT_MODE);
+	BSP_LCD_SetFont(&Font12);
+	BSP_LCD_DrawBitmap(MENU_USBKEY_ICON_X, MENU_USBKEY_ICON_Y, (uint8_t *)usbdrive_not_present);
 }
 
 static void InitialSetup(void)
@@ -66,13 +72,13 @@ void bB808_Init(void)
 	InitLCD("bB808");
 	InitialSetup();
 	MenuDisplayInit();
-	SequencerInit();
 	DelayLineInit();
 	BPM_Init();
 	BPM_Draw(0);
 	Delay_Draw(0);
 	DelayTypeDisplay();
 	QSPISamplePlayerInit();
+	SequencerInit();
 	HAL_TIM_Encoder_Start_IT(&htim2, TIM_CHANNEL_ALL);
 	HAL_TIM_Base_Start_IT(&htim6);	/* tim @ 50 mSec */
 	HAL_TIM_Base_Start_IT(&htim7);	/* sequencer @ 10 mSec */
@@ -127,7 +133,6 @@ void bB808_Loop(void)
 				SystemVar.encoder_flag &= ~ENCODER_SW_FLAG;
 		}
 	}
-
 	if ( (SystemVar.system & SYSTEM_MIDIDEV_FLAG ) == SYSTEM_MIDIDEV_FLAG )
 	{
 		QSPI_Process_MIDI();
@@ -139,14 +144,14 @@ void bB808_Loop(void)
 #define	FROM_HS		1
 char USBDISKPath[4];          /* USB Host logical drive path */
 FATFS USBDISKFatFs;           /* File system object for USB disk logical drive */
-extern	const uint8_t usbdrive[];
+
 
 void MSC_Application(uint8_t from)
 {
 	if(f_mount(&USBDISKFatFs, (TCHAR const*)USBDISKPath, 0) != FR_OK)
 		return;
 	SystemVar.system |= SYSTEM_USB_INIT;
-	BSP_LCD_DrawBitmap(MENU_USBKEY_ICON_X, MENU_USBKEY_ICON_Y, (uint8_t *)usbdrive);
+	BSP_LCD_DrawBitmap(MENU_USBKEY_ICON_X, MENU_USBKEY_ICON_Y, (uint8_t *)usbdrive_present);
 }
 
 void USB_CallFromHS(USBH_HandleTypeDef *phost, uint8_t id)

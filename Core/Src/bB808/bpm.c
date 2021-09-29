@@ -10,6 +10,9 @@
 
 extern	LCD_DrawPropTypeDef DrawProp;
 
+extern	LCD_DrawPropTypeDef DrawProp;
+
+
 void BPM_Draw(uint8_t hilight)
 {
 uint32_t 	h,t,u;  // hundreds,tens,units
@@ -31,7 +34,6 @@ uint32_t 	h,t,u;  // hundreds,tens,units
 	}
 }
 
-
 void BPM_IncDec(void)
 {
 	if ( SystemVar.encval > SystemVar.last_encval )
@@ -39,15 +41,19 @@ void BPM_IncDec(void)
 		SystemVar.beat--;
 		if ( SystemVar.beat == 0 )
 			SystemVar.beat = 1;
+		SystemVar.sequencer_preload = BPM_1_BPM - (SystemVar.beat * BPM_UNIT);
+		SystemVar.sequencer |= SEQUENCER_PRELOAD;
 	}
 	else
 	{
 		SystemVar.beat++;
-		if ( SystemVar.beat > MAX_BEAT )
+		if ( SystemVar.beat >= MAX_BEAT )
 			SystemVar.beat = MAX_BEAT;
+		SystemVar.sequencer_preload = BPM_1_BPM - (SystemVar.beat * BPM_UNIT);
+		SystemVar.sequencer |= SEQUENCER_PRELOAD;
 	}
 	BPM_Draw(1);
-	SequencerSet();
+
 }
 
 void BPM_Init(void)

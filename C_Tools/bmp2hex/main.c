@@ -164,8 +164,10 @@ int main()
 {
 int bmp_len;
 
-    bmp_len = readbmp ("../../Images/usbdrive.bmp");
-    convert_to_c("../../Core/Src/bB808/Images/usbdrive.c","usbdrive",bmp_len);
+    bmp_len = readbmp ("../../Images/usbdrive_present.bmp");
+    convert_to_c("../../Core/Src/bB808/Images/usbdrive_present.c","usbdrive_present",bmp_len);
+    bmp_len = readbmp ("../../Images/usbdrive_not_present.bmp");
+    convert_to_c("../../Core/Src/bB808/Images/usbdrive_not_present.c","usbdrive_not_present",bmp_len);
     bmp_len = readbmp ("../../Images/beat.bmp");
     convert_to_c("../../Core/Src/bB808/Images/beat.c","beat",bmp_len);
     bmp_len = readbmpArray(BLUE);

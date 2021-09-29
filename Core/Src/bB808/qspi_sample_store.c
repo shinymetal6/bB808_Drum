@@ -16,9 +16,27 @@ FIL								WavFile,ConfFile;
 QSPISample_DescriptorTypeDef	QSPISample_Descriptor;
 SampleWAV_FormatTypeDef 		wav_info;
 uint8_t							qspi_buf[SECTOR4K];
+uint16_t						qspi_sec_buf[SECTOR4K/2];
 
 
 extern	QSPISample_HeaderTypeDef QSPISample_Header[NUM_INSTRUMENT];
+
+uint32_t QSPI_WriteSeqFromUSB(void)
+{
+uint32_t	i;
+	qspi_sec_buf[0] = 's'<< 8 | 'e';
+	qspi_sec_buf[1] = 'q'<<8 | '8';
+	for(i=0;i<SystemVar.sequencer_length;i++)
+		qspi_sec_buf[i+2] = sequencer_steps[i];
+	qspi_sec_buf[i+2] = 'e' << 8 | 'n';
+	qspi_sec_buf[i+3] = 'd' << 8 | '8';
+	if ( BSP_QSPI_Erase_4kSector(QSPI_SEQUENCER_ADDRESS) != 0 )
+		return 1;
+	if ( BSP_QSPI_Write((uint8_t *)qspi_sec_buf, QSPI_SEQUENCER_ADDRESS, (SystemVar.sequencer_length*2)+8) != 0 )
+		return 1;
+	return 0;
+}
+
 
 uint32_t QSPI_WriteWavFromUSB(uint8_t instrument_number , uint8_t *filename , uint8_t midi_key)
 {
@@ -159,7 +177,7 @@ int		 	seq[14];
 						for(j=0;j<14;j++)
 						{
 							if ( seq[j] != 0 )
-								val |= 1 << j;
+								val |= (1 << j);
 						}
 						sequencer_steps[line_idx] = val;
 						line_idx++;
@@ -168,6 +186,12 @@ int		 	seq[14];
 			}
 		}
 		SystemVar.sequencer_length = sequencer_length;
+		if ( QSPI_WriteSeqFromUSB() != 0 )
+		{
+			BSP_LCD_DisplayStringAt(0, STORE_MSG_ERRORLINE,(uint8_t *)"Error reading bb_seq.txt", LEFT_MODE);
+		}
+		else
+			BSP_LCD_DisplayStringAt(0, STORE_MSG_LINE,(uint8_t *) "                           ", LEFT_MODE);
 		f_close(&ConfFile);
 	}
 	BSP_LCD_DisplayStringAt(0, STORE_MSG_MESSAGE,(uint8_t *)"                           ", CENTER_MODE);

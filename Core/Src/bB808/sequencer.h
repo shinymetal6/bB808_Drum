@@ -12,8 +12,8 @@
 
 extern	void SequencerInit(void);
 extern	void SequencerCallback(void);
-extern	void Sequencer(void);
-extern	void SequencerSet(void);
+//extern	void Sequencer(void);
+//extern	void SequencerSet(void);
 
 /* sequencer file example , simple 4/4 , 4 beat
 hihat on 0

@@ -56,6 +56,7 @@ typedef struct {
 
 /* sequencer flags */
 #define	SEQUENCER_IRQ_FLAG			0x80
+#define	SEQUENCER_PRELOAD			0x02
 #define	SEQUENCER_TICK				0x01
 
 /* timers_flag */
