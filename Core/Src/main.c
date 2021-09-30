@@ -1406,6 +1406,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USB_OTGHS_OVCR_INT_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : SINGLE_SEQ_Pin */
+  GPIO_InitStruct.Pin = SINGLE_SEQ_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(SINGLE_SEQ_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : ENCODER_SW_Pin */
   GPIO_InitStruct.Pin = ENCODER_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;

@@ -148,7 +148,7 @@ void QSPI_ParseSeqUSB_AndWrite(void)
 {
 uint32_t	i,j,seq_header = 0,val,line_idx=0,sequencer_length;
 uint8_t 	len;
-int		 	seq[14];
+int		 	seq[16];
 
 	if(f_open(&ConfFile, "bb_seq.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)
 	{
@@ -171,10 +171,10 @@ int		 	seq[14];
 				}
 				else
 				{
-					if ( sscanf((char * )line,"%d %d %d %d %d %d %d %d %d %d %d %d %d %d",&seq[0],&seq[1],&seq[2],&seq[3],&seq[4],&seq[5],&seq[6],&seq[7],&seq[8],&seq[9],&seq[10],&seq[11],&seq[12],&seq[13]) == 14 )
+					if ( sscanf((char * )line,"%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",&seq[0],&seq[1],&seq[2],&seq[3],&seq[4],&seq[5],&seq[6],&seq[7],&seq[8],&seq[9],&seq[10],&seq[11],&seq[12],&seq[13],&seq[14],&seq[15]) == 16 )
 					{
 						val = 0;
-						for(j=0;j<14;j++)
+						for(j=0;j<16;j++)
 						{
 							if ( seq[j] != 0 )
 								val |= (1 << j);

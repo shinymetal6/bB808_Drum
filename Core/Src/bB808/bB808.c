@@ -20,15 +20,26 @@ extern	TIM_HandleTypeDef htim7;
 extern	const uint8_t usbdrive_not_present[];
 extern	const uint8_t usbdrive_present[];
 
+uint8_t	view_erase_state = 0;
 void tim100msec_callback(void)
 {
 	SystemVar.timers_flag |= TIMER_100MS_FLAG;
 	SystemVar.tim100msec_counter++;
-	SystemVar.tim1Sec_counter++;
-	if ( SystemVar.tim1Sec_counter > 9 )
+	if ( SystemVar.tim100msec_counter > 9 )
 	{
-		SystemVar.tim1Sec_counter = 0;
+		SystemVar.tim100msec_counter = 0;
 		SystemVar.timers_flag |= TIMER_1SEC_FLAG;
+		if (( SystemVar.system & SYSTEM_ERASE_IN_PROGRESS) == SYSTEM_ERASE_IN_PROGRESS)
+		{
+			if ( view_erase_state == 0 )
+				BSP_LCD_SetTextColor(MENU_DELETE_COLOR);
+			else
+				BSP_LCD_SetTextColor(LCD_COLOR_RED);
+
+			BSP_LCD_DisplayStringAt(0, DLY_TITLE_TEXT_Y-40, (uint8_t *)"Erase in progress", CENTER_MODE);
+			view_erase_state++;
+			view_erase_state &= 1;
+		}
 	}
 }
 
@@ -63,6 +74,7 @@ void InitLCD(char *title)
 static void InitialSetup(void)
 {
 	SystemVar.beat = 120;
+	SystemVar.delay_weight_int = 50;
 	SystemVar.system = SYSTEM_MENU_INCDEC;
 }
 
@@ -74,6 +86,7 @@ void bB808_Init(void)
 	MenuDisplayInit();
 	DelayLineInit();
 	BPM_Init();
+	Delay_Weight_Draw(0);
 	BPM_Draw(0);
 	Delay_Draw(0);
 	DelayTypeDisplay();
@@ -100,6 +113,8 @@ void bB808_Loop(void)
 					BPM_IncDec();
 				if (( SystemVar.system & SYSTEM_DELAYVAL_INCDEC) == SYSTEM_DELAYVAL_INCDEC)
 					Delay_IncDec();
+				if (( SystemVar.system & SYSTEM_DELAYWEIGHT_INCDEC) == SYSTEM_DELAYWEIGHT_INCDEC)
+					Delay_Weight_IncDec();
 			}
 			SystemVar.encoder_flag &= ~ENCODER_ROTATION_FLAG;
 		}
@@ -123,6 +138,12 @@ void bB808_Loop(void)
 						SystemVar.system |= SYSTEM_MENU_INCDEC;
 						Delay_Draw(0);
 					}
+					if (( SystemVar.system & SYSTEM_DELAYWEIGHT_INCDEC) == SYSTEM_DELAYWEIGHT_INCDEC)
+					{
+						SystemVar.system &= ~SYSTEM_DELAYWEIGHT_INCDEC;
+						SystemVar.system |= SYSTEM_MENU_INCDEC;
+						Delay_Weight_Draw(0);
+					}
 				}
 				SystemVar.encoder_flag |= ENCODER_SW_FLAG;
 			}
@@ -132,6 +153,11 @@ void bB808_Loop(void)
 			if ( HAL_GPIO_ReadPin(ENCODER_SW_GPIO_Port, ENCODER_SW_Pin) == 1 )
 				SystemVar.encoder_flag &= ~ENCODER_SW_FLAG;
 		}
+		if ( HAL_GPIO_ReadPin(SINGLE_SEQ_GPIO_Port, SINGLE_SEQ_Pin) == 1 )
+		{
+			SystemVar.sequencer |= SEQUENCER_SINGLE;
+		}
+
 	}
 	if ( (SystemVar.system & SYSTEM_MIDIDEV_FLAG ) == SYSTEM_MIDIDEV_FLAG )
 	{

@@ -27,7 +27,8 @@ void SequencerCallback(void)
 {
 uint16_t	i , val;
 
-	if (( (SystemVar.system & SYSTEM_INTEXT_SEQUENCER ) == SYSTEM_INTEXT_SEQUENCER ) && (SystemVar.sequencer_length != 0 ))
+	if ((((SystemVar.system & SYSTEM_INTEXT_SEQUENCER ) == SYSTEM_INTEXT_SEQUENCER ) && (SystemVar.sequencer_length != 0 )) |
+			((SystemVar.sequencer & SEQUENCER_SINGLE ) == SEQUENCER_SINGLE ))
 	{
 		for(i=0;i<NUM_INSTRUMENT;i++)
 		{
@@ -40,7 +41,13 @@ uint16_t	i , val;
 		}
 		SystemVar.sequencer_step ++;
 		if ( SystemVar.sequencer_step > SystemVar.sequencer_length )
+		{
 			SystemVar.sequencer_step = 1;
+			if ( (SystemVar.sequencer & SEQUENCER_SINGLE ) == SEQUENCER_SINGLE )
+			{
+				SystemVar.sequencer &= ~SEQUENCER_SINGLE;
+			}
+		}
 		if ((SystemVar.sequencer & SEQUENCER_PRELOAD ) == SEQUENCER_PRELOAD)
 		{
 			TIM7->ARR = SystemVar.sequencer_preload;

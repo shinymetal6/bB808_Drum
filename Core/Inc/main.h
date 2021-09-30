@@ -238,8 +238,8 @@ void Error_Handler(void);
 #define QSPI_D3_GPIO_Port GPIOD
 #define ENCODER_CLK_Pin GPIO_PIN_1
 #define ENCODER_CLK_GPIO_Port GPIOA
-#define SYS_B_User_Pin GPIO_PIN_0
-#define SYS_B_User_GPIO_Port GPIOA
+#define SINGLE_SEQ_Pin GPIO_PIN_0
+#define SINGLE_SEQ_GPIO_Port GPIOA
 #define ARD_A1_Pin GPIO_PIN_4
 #define ARD_A1_GPIO_Port GPIOA
 #define ARD_A2_Pin GPIO_PIN_4

@@ -79,10 +79,5 @@ uint8_t		file_idx=0;
 	}
 }
 
-void ClearDescriptorFileArea(uint8_t x , uint8_t y)
-{
-	BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-	BSP_LCD_FillRect(x, y, LCD_RESOLUTION_X, LCD_RESOLUTION_Y-DIGIT_H-y);
-}
 
 

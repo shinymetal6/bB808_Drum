@@ -19,7 +19,9 @@ void DelayLineInit(void)
 	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
 	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
 	BSP_LCD_SetFont(&Font16);
-	BSP_LCD_DisplayStringAt(DLY_TEXT_X,DLY_TEXT_Y, (uint8_t *)"None", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(DLY_TITLE_TEXT_X,DLY_TITLE_TEXT_Y, (uint8_t *)"Delay", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(DLY_TEXT_X,  DLY_TEXT_Y,  (uint8_t *)"None", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(DLYW_TEXT_X, DLYW_TEXT_Y, (uint8_t *)"Weight", LEFT_MODE);
 	BSP_LCD_SetFont(&Font12);
 }
 
@@ -76,6 +78,25 @@ uint32_t 	h,t,u;  // hundreds,tens,units
 	}
 }
 
+void Delay_Weight_Draw(uint8_t hilight)
+{
+uint32_t 	t,u;  // hundreds,tens,units
+
+	u = SystemVar.delay_weight_int%10;
+	t = (SystemVar.delay_weight_int/10)%10;
+
+	if ( hilight == 0 )
+	{
+		BSP_LCD_DrawBitmap(DLYW_DIGIT_XPOST, DLYW_DIGIT_YPOS, (uint8_t *)green_digits[t]);
+		BSP_LCD_DrawBitmap(DLYW_DIGIT_XPOSU, DLYW_DIGIT_YPOS, (uint8_t *)green_digits[u]);
+	}
+	else
+	{
+		BSP_LCD_DrawBitmap(DLYW_DIGIT_XPOST, DLYW_DIGIT_YPOS, (uint8_t *)red_digits[t]);
+		BSP_LCD_DrawBitmap(DLYW_DIGIT_XPOSU, DLYW_DIGIT_YPOS, (uint8_t *)red_digits[u]);
+	}
+}
+
 void Delay_IncDec(void)
 {
 	if ( SystemVar.encval > SystemVar.last_encval )
@@ -90,4 +111,21 @@ void Delay_IncDec(void)
 			SystemVar.delay = MAX_DELAY;
 	}
 	Delay_Draw(1);
+}
+
+void Delay_Weight_IncDec(void)
+{
+	if ( SystemVar.encval > SystemVar.last_encval )
+	{
+		if ( SystemVar.delay_weight_int != MIN_DELAYW )
+			SystemVar.delay_weight_int--;
+	}
+	else
+	{
+		SystemVar.delay_weight_int++;
+		if ( SystemVar.delay_weight_int > MAX_DELAYW )
+			SystemVar.delay_weight_int = MAX_DELAYW;
+	}
+	SystemVar.delay_weight = (float )SystemVar.delay_weight_int / 100.0F;
+	Delay_Weight_Draw(1);
 }

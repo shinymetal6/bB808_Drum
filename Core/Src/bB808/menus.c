@@ -113,12 +113,18 @@ Menu_TypeDef	MenuDelay[] =
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+MENU_FONT_HEIGHT,
-			"Set Type",
+			"Set Weight",
 			MENU_INACTIVE_COLOR,
 		},
 		{
 			MENU_LINE_0_X,
 			MENU_LINE_0_Y+2*MENU_FONT_HEIGHT,
+			"Set Type",
+			MENU_INACTIVE_COLOR,
+		},
+		{
+			MENU_LINE_0_X,
+			MENU_LINE_0_Y+3*MENU_FONT_HEIGHT,
 			"Return",
 			MENU_INACTIVE_COLOR,
 		},
@@ -298,7 +304,6 @@ void MeuEncoderChangeMenu(void)
 		if ( SystemVar.next_menu_item == MenuSamples[0].items)
 		{
 			SystemVar.menu_state = MENU_TOP;
-			ClearDescriptorFileArea(DESCRIPTOR_AREA_X , DESCRIPTOR_AREA_Y);
 			MenuDisplayMenu(MenuTop);
 		}
 		break;
@@ -320,6 +325,13 @@ void MeuEncoderChangeMenu(void)
 			return;
 		}
 		if ( SystemVar.next_menu_item == 1)
+		{
+			SystemVar.system |= SYSTEM_DELAYWEIGHT_INCDEC;
+			SystemVar.system &= ~SYSTEM_MENU_INCDEC;
+			Delay_Weight_Draw(1);
+			return;
+		}
+		if ( SystemVar.next_menu_item == 2)
 		{
 			if (( SystemVar.delay_type & DELAY_TYPE_FLANGER) == DELAY_TYPE_FLANGER)
 			{
@@ -371,7 +383,11 @@ void MeuEncoderChangeMenu(void)
 		}
 		if ( SystemVar.next_menu_item == 3)
 		{
+
+			SystemVar.system |= SYSTEM_ERASE_IN_PROGRESS;
 			BSP_QSPI_Erase_Chip();
+			SystemVar.system &= ~SYSTEM_ERASE_IN_PROGRESS;
+			BSP_LCD_DisplayStringAt(0, DLY_TITLE_TEXT_Y-40, (uint8_t *)"                 ", CENTER_MODE);
 		}
 		break;
 	}

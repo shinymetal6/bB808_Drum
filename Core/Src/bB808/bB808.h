@@ -39,6 +39,7 @@ typedef struct {
 	uint16_t		delay;
 	uint8_t			delay_type;
 	uint16_t		delay_insertion_pointer;
+	uint16_t		delay_weight_int;
 	float			delay_weight;
 
 }SystemVar_TypeDef;
@@ -48,16 +49,17 @@ typedef struct {
 #define	SYSTEM_INTEXT_SEQUENCER		0x01
 #define	SYSTEM_BPM_INCDEC			0x02
 #define	SYSTEM_DELAYVAL_INCDEC		0x04
-#define	SYSTEM_DELAYTYPE_INCDEC		0x08
+#define	SYSTEM_DELAYWEIGHT_INCDEC	0x08
 #define	SYSTEM_MENU_INCDEC			0x10
-#define	SYSTEM_USB_INIT				0x20
-#define	SYSTEM_AUDIO_INIT			0x40
+#define	SYSTEM_ERASE_IN_PROGRESS	0x20
+#define	SYSTEM_USB_INIT				0x40
 #define	SYSTEM_MIDIDEV_FLAG			0x80
 
 /* sequencer flags */
-#define	SEQUENCER_IRQ_FLAG			0x80
-#define	SEQUENCER_PRELOAD			0x02
 #define	SEQUENCER_TICK				0x01
+#define	SEQUENCER_PRELOAD			0x02
+#define	SEQUENCER_SINGLE			0x40
+#define	SEQUENCER_IRQ_FLAG			0x80
 
 /* timers_flag */
 #define	TIMER_100MS_FLAG			0x01
