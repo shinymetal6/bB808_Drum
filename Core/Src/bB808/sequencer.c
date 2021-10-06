@@ -15,12 +15,9 @@ uint32_t	bpm2irq[MAX_BEAT];
 void SequencerInit(void)
 {
 	BSP_QSPI_Read((uint8_t *)sequencer_steps, QSPI_SEQUENCER_ADDRESS, SEQUENCER_MAX_SIZE);
-	if (( sequencer_steps[0] == (('s'<<8) | 'e')) && ( sequencer_steps[1] == (('q'<<8) | '8')))
-		SystemVar.sequencer_length = sequencer_steps[2];
-	else
-		SystemVar.sequencer_length = 0;
-
-	SystemVar.sequencer_counter = 0;
+	SystemVar.sequencer_length = SystemVar.sequencer_counter = 0;
+	if ( sequencer_steps[0] <= SEQUENCER_MAX_SIZE )
+		SystemVar.sequencer_length = sequencer_steps[0];
 }
 
 void SequencerCallback(void)

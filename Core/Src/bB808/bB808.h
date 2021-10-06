@@ -55,6 +55,9 @@ typedef struct {
 #define	SYSTEM_USB_INIT				0x40
 #define	SYSTEM_MIDIDEV_FLAG			0x80
 
+#define	INTERNAL_SEQUENCER			SYSTEM_INTEXT_SEQUENCER
+#define	EXTERNAL_SEQUENCER			0
+
 /* sequencer flags */
 #define	SEQUENCER_TICK				0x01
 #define	SEQUENCER_PRELOAD			0x02

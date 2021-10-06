@@ -189,6 +189,7 @@ int main(void)
   while (1)
   {
 		bB808_Loop();
+		if ((SystemVar.system & SYSTEM_INTEXT_SEQUENCER ) == EXTERNAL_SEQUENCER )
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 

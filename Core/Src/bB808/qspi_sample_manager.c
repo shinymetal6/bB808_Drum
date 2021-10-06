@@ -61,16 +61,6 @@ int32_t		sample,i,k;
 		sample = 0;
 		for(k=0;k<NUM_INSTRUMENT;k++)
 			sample += file_buf[k][i-limitlow];
-			/*
-		sample =	file_buf[0][i-limitlow] +
-					file_buf[1][i-limitlow] +
-					file_buf[2][i-limitlow] +
-					file_buf[3][i-limitlow] +
-					file_buf[4][i-limitlow] +
-					file_buf[5][i-limitlow] +
-					file_buf[6][i-limitlow] +
-					file_buf[7][i-limitlow];
-*/
 		out_buf[i] = DelayLine((int16_t )((float )sample * 0.125F),delay_type );
 	}
 }
