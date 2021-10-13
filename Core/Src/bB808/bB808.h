@@ -73,6 +73,7 @@ typedef struct {
 #define	ENCODER_SW_FLAG				0x02
 
 /* delay_type */
+#define	DELAY_TYPE_NONE			0x00
 #define	DELAY_TYPE_ECHO			0x01
 #define	DELAY_TYPE_FLANGER		0x02
 

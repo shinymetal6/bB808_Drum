@@ -8,6 +8,8 @@
 #ifndef SRC_BB808_QSPI_SAMPLE_STORE_H_
 #define SRC_BB808_QSPI_SAMPLE_STORE_H_
 
+#include	"sequencer.h"
+
 #define	STORE_MSG_MESSAGE	120
 #define	STORE_MSG_LINE		140
 #define	STORE_MSG_ERRORLINE	160
@@ -41,5 +43,7 @@ typedef struct {
 
 extern	void QSPI_ParseWavUSB_AndWrite(void);
 extern	void QSPI_ParseSeqUSB_AndWrite(void);
+
+extern	Sequencer_DescriptorTypeDef	Sequencer_Descriptor;
 
 #endif /* SRC_BB808_QSPI_SAMPLE_STORE_H_ */

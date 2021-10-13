@@ -23,18 +23,9 @@ extern	QSPISample_HeaderTypeDef QSPISample_Header[NUM_INSTRUMENT];
 
 uint32_t QSPI_WriteSeqFromUSB(void)
 {
-uint32_t	i;
-	qspi_sec_buf[0] = 's'<< 8 | 'e';
-	qspi_sec_buf[1] = 'q'<<8 | '8';
-	for(i=0;i<SystemVar.sequencer_length;i++)
-		qspi_sec_buf[i+2] = sequencer_steps[i];
-	qspi_sec_buf[i+2] = 'e' << 8 | 'n';
-	qspi_sec_buf[i+3] = 'd' << 8 | '8';
-	if ( BSP_QSPI_Erase_4kSector(QSPI_SEQUENCER_ADDRESS) != 0 )
-		return 1;
-	if ( BSP_QSPI_Write((uint8_t *)qspi_sec_buf, QSPI_SEQUENCER_ADDRESS, (SystemVar.sequencer_length*2)+8) != 0 )
-		return 1;
-	return 0;
+	if ( BSP_QSPI_Erase_4kSector(QSPI_SEQUENCER_ADDRESS) == 0 )
+		return BSP_QSPI_Write((uint8_t *)&Sequencer_Descriptor, QSPI_SEQUENCER_ADDRESS, sizeof(Sequencer_Descriptor));
+	return 1;
 }
 
 
@@ -146,7 +137,7 @@ uint8_t 	filename[32],len , lcdline[64];
 
 void QSPI_ParseSeqUSB_AndWrite(void)
 {
-uint32_t	i,j,val,line_idx=0;
+uint32_t	params=0,j,val,line_idx=0,end=0;
 uint8_t 	len;
 uint8_t 	delay_type[16];
 int		 	seq[16];
@@ -154,42 +145,39 @@ int		 	seq[16];
 	if(f_open(&ConfFile, "bb_seq.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)
 	{
 		BSP_LCD_DisplayStringAt(0, STORE_MSG_MESSAGE,(uint8_t *) "Reading sequence", CENTER_MODE);
-		SystemVar.sequencer_length = SEQUENCER_MAX_SIZE;
-		for(i=0;i<SEQUENCER_MAX_SIZE;i++)
+		while(end == 0)
 		{
-			if ( i  > SystemVar.sequencer_length )
-				break;
 			f_gets((char * )line,256,&ConfFile);
 			if ( (len = strlen((char * )line)) != 0 )
 			{
-				if ( line_idx == 0 )
+				if ( params == 0 )
 				{
 					if ( sscanf((char * )line,"BEAT %d",(int *)&seq[0]) == 1 )
 					{
 						if ( seq[0] <= MAX_BEAT)
-							SystemVar.beat = seq[0];
+							Sequencer_Descriptor.sequencer_beat = seq[0];
 					}
-					if ( sscanf((char * )line,"DELAY %s %d %d",delay_type,(int *)&seq[0],(int *)&seq[1]) == 3 )
+					else if ( sscanf((char * )line,"DELAY %s %d %d",delay_type,(int *)&seq[0],(int *)&seq[1]) == 3 )
 					{
 						if ( strcmp((char * )delay_type,"ECHO") == 0 )
-							SystemVar.delay_type = DELAY_TYPE_ECHO;
+							Sequencer_Descriptor.delay_type = DELAY_TYPE_ECHO;
 						else if ( strcmp((char * )delay_type,"FLANGER") == 0 )
-							SystemVar.delay_type = DELAY_TYPE_FLANGER;
+							Sequencer_Descriptor.delay_type = DELAY_TYPE_FLANGER;
 						else
-							return;	// param error
+							Sequencer_Descriptor.delay_type = DELAY_TYPE_NONE;
 						if ( seq[0] <= MAX_DELAY)
-							SystemVar.delay = seq[0];
+							Sequencer_Descriptor.delay = seq[0];
 						else
-							return;	// param error
+							Sequencer_Descriptor.delay = 0;
 						if (( seq[1] <= MAX_DELAYW) && ( seq[1] >= MIN_DELAYW))
-							SystemVar.delay_weight = (float )seq[1] / 100.0F;
+							Sequencer_Descriptor.delay_weight = seq[1];
 						else
-							return;	// param error
+							Sequencer_Descriptor.delay_weight = (MAX_DELAYW+MIN_DELAYW)/2;
 					}
-					if ( sscanf((char * )line,"BB808_SEQUENCE %d",(int *)&seq[0]) == 1 )
+					else if ( sscanf((char * )line,"BB808_SEQUENCE %d",(int *)&seq[0]) == 1 )
 					{
-						SystemVar.sequencer_length = sequencer_steps[0] = seq[0];
-						line_idx = 1;
+						Sequencer_Descriptor.sequencer_length = seq[0];
+						params = 1;
 					}
 				}
 				else
@@ -202,15 +190,19 @@ int		 	seq[16];
 							if ( seq[j] != 0 )
 								val |= (1 << j);
 						}
-						sequencer_steps[line_idx] = val;
+						Sequencer_Descriptor.sequencer_steps[line_idx] = val;
 						line_idx++;
+						if ( line_idx >= Sequencer_Descriptor.sequencer_length )
+							end = 1;
 					}
 				}
 			}
 		}
+		Sequencer_Descriptor.flag = 0xdead;
+		sprintf((char *)Sequencer_Descriptor.header,"Seq_8xx");
 		if ( QSPI_WriteSeqFromUSB() != 0 )
 		{
-			BSP_LCD_DisplayStringAt(0, STORE_MSG_ERRORLINE,(uint8_t *)"Error reading bb_seq.txt", LEFT_MODE);
+			BSP_LCD_DisplayStringAt(0, STORE_MSG_ERRORLINE,(uint8_t *)"Error storing bb_seq.txt", LEFT_MODE);
 		}
 		else
 			BSP_LCD_DisplayStringAt(0, STORE_MSG_LINE,(uint8_t *) "                           ", LEFT_MODE);
@@ -218,6 +210,12 @@ int		 	seq[16];
 	}
 	BSP_LCD_DisplayStringAt(0, STORE_MSG_MESSAGE,(uint8_t *)"                           ", CENTER_MODE);
 	BSP_LCD_DisplayStringAt(0, STORE_MSG_LINE,(uint8_t *) "                           ", LEFT_MODE);
+	SystemVar.beat = Sequencer_Descriptor.sequencer_beat;
+	SystemVar.delay_type = Sequencer_Descriptor.delay_type;
+	SystemVar.delay = Sequencer_Descriptor.delay;
+	SystemVar.delay_weight = (float )Sequencer_Descriptor.delay_weight / 100.0F;;
+	SystemVar.sequencer_length = Sequencer_Descriptor.sequencer_length;
+
 	BPM_Draw(0);
 	DelayTypeDisplay();
 	Delay_Draw(0);
